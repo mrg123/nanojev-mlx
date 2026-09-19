@@ -8,11 +8,11 @@
 **NanoJev 的 Apple Silicon 原生移植 —— 用 MLX 在 Mac 上跑 0.6B 并行决策模型。**
 输入状态和问题，直接输出完整概率分布，零输出 token 解码。
 
-原版 NanoJev **以 CUDA 为先**：记录的环境面向 A100、bf16 精度，研究脚本也大多限定
-CUDA。但它的推理脚本确实能在 Apple 芯片上通过 PyTorch MPS 跑起来——下面基准里的
-「PyTorch + MPS」就是它——代价是必须拖上 PyTorch，内存和启动时间也明显更高。本移植
-**不改动模型本身**，只把决策头改用 MLX 重新实现，于是同一份权重可以原生跑在 Metal
-GPU 上，且完全不依赖 PyTorch。
+原版 NanoJev **以 CUDA 为先**：它的推理脚本没有 CUDA 会直接报错退出，记录的训练环境也
+面向 A100、bf16 精度。为了做**同口径**对比，下面的基准只移除那一处设备门禁——仅此一处，
+原仓库其余代码一行未动——让**同一份**脚本能跑在 PyTorch MPS 上；代价是必须拖上 PyTorch，
+内存和启动时间也明显更高。本移植**不改动模型本身**，只把决策头改用 MLX 重新实现，于是
+同一份权重可以原生跑在 Metal GPU 上，且完全不依赖 PyTorch。
 
 > 非官方社区移植，与 NanoJev 及 TypeSafe 作者无关。
 
@@ -217,7 +217,7 @@ token 右侧，纯因果掩码产生的 hidden state 与原实现「因果 + pad
 | backbone | HF `Qwen3Model`（PyTorch） | `mlx_lm` `Qwen3Model` |
 | 决策头 | `nn.MultiheadAttention` | MLX 显式注意力 + 加性掩码 |
 | 融合的 `in_proj_weight` | 保持融合 | 拆成 `q_proj` / `k_proj` / `v_proj` |
-| 设备门禁 | 以 CUDA 为先；推理也可退回 PyTorch MPS | 走 MLX 的 Metal GPU，不依赖 PyTorch |
+| 设备门禁 | 没有 CUDA 直接报错退出（基准仅移除这一处门禁） | 走 MLX 的 Metal GPU，不依赖 PyTorch |
 
 `prepare_examples`（把状态、问题、候选集变成 token 路径的那段）是**逐行**移植的——
 只要差一个 token，下游所有概率都会变。

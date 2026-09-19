@@ -443,17 +443,21 @@
     <strong class="nt zh">先说清楚一件事</strong>
     <strong class="nt en">One thing to get straight first</strong>
     <span class="zh">
-      原版 NanoJev <strong>并不是只能跑 CUDA</strong>。它的文档与训练环境以 CUDA 为先（A100、bf16），
-      研究脚本大多限定 CUDA，但它的推理脚本本身支持 <code>auto / cpu / mps / cuda</code>，
-      在 Apple 芯片上通过 PyTorch MPS 是能跑的——本项目基准里的「PyTorch + MPS」就是它。
+      原版 NanoJev <strong>以 CUDA 为先</strong>：它的推理脚本<strong>没有 CUDA 会直接报错退出</strong>，
+      记录的训练环境也面向 A100、bf16 精度，研究脚本大多限定 CUDA。
+      为了做<strong>同口径</strong>对比，本项目基准<strong>只移除那一处设备门禁</strong>——仅此一处，
+      原仓库其余代码一行未动——让<strong>同一份</strong>脚本能跑在 PyTorch MPS 上，
+      也就是基准表里的「PyTorch + MPS」那一列。
       真正的差别在于：那条路必须装 PyTorch，而且内存和启动开销大得多。
     </span>
     <span class="en">
-      The original NanoJev is <strong>not CUDA-only</strong>. It is CUDA-first — its docs and training
-      environment target an A100 in bf16, and most research scripts are CUDA-gated — but its inference
-      script accepts <code>auto / cpu / mps / cuda</code> and does run on Apple Silicon via PyTorch MPS.
-      That is precisely the “PyTorch + MPS” baseline in this project. The real difference is that this
-      path forces PyTorch on you and costs far more memory and startup time.
+      The original NanoJev is <strong>CUDA-first</strong>: its inference script
+      <strong>refuses to run without CUDA</strong>, and the recorded training environment targets an
+      A100 in bf16. To get a like-for-like baseline, this project's benchmark removes
+      <strong>only that device gate</strong> — one change, nothing else in the original touched —
+      which lets the <strong>very same</strong> script run on PyTorch MPS. That is the
+      “PyTorch + MPS” column in the benchmark table. The real difference is that this path forces
+      PyTorch on you and costs far more memory and startup time.
     </span>
   </div>
 
@@ -496,7 +500,7 @@
         </tr>
         <tr>
           <td class="zh">设备</td><td class="en">Device</td>
-          <td class="zh">CUDA 优先，可退 MPS</td><td class="en">CUDA-first, MPS fallback</td>
+          <td class="zh">没有 CUDA 直接报错退出（基准仅移除这一处门禁）</td><td class="en">Refuses to run without CUDA (the benchmark removes only this gate)</td>
           <td class="zh">Metal GPU（MLX），不需 PyTorch</td><td class="en">Metal GPU via MLX, no PyTorch</td>
         </tr>
       </tbody>
@@ -812,7 +816,7 @@ PY</code></pre>
 
 curl -X POST http://127.0.0.1:8765/api/evaluate \
   -H 'Content-Type: application/json' \
-  --data-binary @request.json</code></pre>
+  --data-binary @examples/request.json</code></pre>
 
   <h3><span class="zh">在 Python 里调用</span><span class="en">From Python</span></h3>
   <pre><code>from nanojev_mlx import load_model, run_prediction

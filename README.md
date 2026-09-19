@@ -8,11 +8,13 @@
 **Apple Silicon native port of [NanoJev](https://github.com/TianyuCodings/NanoJev) — a 0.6B parallel decision model running on MLX.**
 States and questions in, complete probability distributions out, zero output-token decoding.
 
-NanoJev is CUDA-first: the recorded environment targets an A100 in bf16 and most research
-scripts are CUDA-gated. Its inference path does still run on Apple Silicon through PyTorch MPS
-— that is exactly the baseline measured below — but it drags in PyTorch and leaves memory and
-startup time on the table. This port keeps the model exactly as trained and reimplements the
-decision head in MLX, so the same weights run natively on the Metal GPU with no PyTorch at all.
+NanoJev is CUDA-first: its inference script refuses to run without CUDA, and the recorded
+training environment targets an A100 in bf16. To get a like-for-like baseline, the benchmark
+below removes **only** that device gate — one change, nothing else in the original touched —
+which lets the very same script run on PyTorch MPS. That path still forces PyTorch on you and
+leaves memory and startup time on the table. This port keeps the model exactly as trained and
+reimplements the decision head in MLX, so the same weights run natively on the Metal GPU with
+no PyTorch at all.
 
 > Unofficial community port. Not affiliated with the NanoJev or TypeSafe authors.
 
@@ -243,7 +245,7 @@ semantics are untouched. Concretely:
 | Backbone | HF `Qwen3Model` (PyTorch) | `mlx_lm` `Qwen3Model` |
 | Decision head | `nn.MultiheadAttention` | explicit MLX attention with additive mask |
 | Fused `in_proj_weight` | kept fused | split into `q_proj` / `k_proj` / `v_proj` |
-| Device gate | CUDA-first; inference can also fall back to PyTorch MPS | Metal GPU via MLX, no PyTorch |
+| Device gate | refuses to run without CUDA (the benchmark removes only this gate) | Metal GPU via MLX, no PyTorch |
 
 `prepare_examples` — the code that turns a state, question, and candidate set into token
 paths — is a line-by-line port, because a single differing token would change every
