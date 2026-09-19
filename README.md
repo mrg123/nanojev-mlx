@@ -31,7 +31,7 @@ be the same model. `tests/reference/expected_pytorch.json` is the golden output 
 | Max probability deviation vs PyTorch (fp32) | **1.6e-07** |
 | Backbone last-hidden-state max abs error | 1.0e-04 (on values up to 67.6) |
 | Probability distributions normalized | all pass |
-| Test suite | **19 tests, all passing** |
+| Test suite | **36 tests, all passing** (4 of them skip without weights) |
 
 Semantics match on every question in the reference fixture:
 
@@ -201,14 +201,34 @@ python -m unittest discover -s tests -p "test_contract.py" -v
 NANOJEV_CHECKPOINT=/path/to/checkpoints/NanoJev python -m unittest discover -s tests -v
 ```
 
-**19 tests** in total (15 protocol + 4 equivalence). With no checkpoint present the four
-equivalence tests skip rather than fail, so the suite is still useful on a bare checkout.
+**36 tests** in total: 15 protocol, 17 demo, 4 equivalence. With no checkpoint present the
+four equivalence tests skip rather than fail, so a bare checkout still runs **32 of them**.
 
 CI covers the protocol layer on Linux. The equivalence tests deliberately do not run there:
 MLX crashes on import in headless, GPU-less environments
 ([ml-explore/mlx#3148](https://github.com/ml-explore/mlx/issues/3148)), and GitHub's hosted
 macOS runners expose no Metal device. That is why `nanojev_mlx.answers` — the pure-logic half
 of the output path — lives in its own module with no MLX import.
+
+## Demo: watch it play Snake
+
+Everywhere else in this repo the model's output is JSON, which is the right output for
+a program and a poor first impression for a person. The demo runs one full episode on
+your GPU and writes a single self-contained HTML page — no server, no network, no CDN:
+
+```bash
+python -m demo.play --checkpoint-dir checkpoints/games/variants/games_gold_seed17 --open
+```
+
+The page steps through the episode and shows, at every decision, the probability the
+model put on **each** offered move before committing to one. That is the thing a
+token-stream model structurally cannot show you.
+
+It needs the Snake checkpoint, not the root release — see
+[`demo/README.md`](demo/README.md) for the download. Note the architecture it makes
+visible: a code planner filters colliding moves and keeps those on a shortest static
+path to the food; the model is asked to choose **only when two or more survive**. When
+one survives, the move is forced and the model is never called at all.
 
 ## How it works
 

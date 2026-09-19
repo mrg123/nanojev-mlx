@@ -11,3 +11,7 @@ dist/
 checkpoints/
 *.safetensors
 *.npz
+
+# demo 跑出来的回放页面，是产物不是源码
+snake-demo.html
+test-output.txt

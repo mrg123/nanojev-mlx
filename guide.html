@@ -634,7 +634,7 @@
       <tbody>
         <tr>
           <td class="zh">测试套件</td><td class="en">Test suite</td>
-          <td><strong>19 / 19 pass</strong></td>
+          <td><strong>36 / 36 pass</strong></td>
         </tr>
         <tr>
           <td class="zh">与 PyTorch 最大概率偏差</td><td class="en">Max probability deviation vs PyTorch</td>
@@ -830,11 +830,11 @@ print(result["states"][0]["answers"])</code></pre>
   python -m unittest discover -s tests -v</code></pre>
   <p class="kbd-hint zh">
     不设 <code>NANOJEV_CHECKPOINT</code> 也能跑：需要权重的等价性测试会自动跳过，
-    剩下 15 项协议层测试无需权重即可通过。
+    剩下 32 项（协议层 15 + 演示 17）无需权重即可通过。
   </p>
   <p class="kbd-hint en">
     It also runs without <code>NANOJEV_CHECKPOINT</code>: the weight-dependent equivalence tests
-    skip themselves and the remaining 15 protocol-level tests pass with no weights at all.
+    skip themselves and the remaining 32 (15 protocol + 17 demo) pass with no weights at all.
   </p>
 </section>
 
@@ -854,13 +854,18 @@ print(result["states"][0]["answers"])</code></pre>
   serve.py    本地 HTTP 服务（/api/evaluate、/api/health）
 tests/
   test_contract.py     协议层：校验、概率归一、异常输入（15 项，无需权重/无需 MLX）
+  test_demo.py         贪吃蛇环境、规划器、对局循环（17 项，用桩引擎，无需权重/无需 MLX）
   test_equivalence.py  数值等价：与 PyTorch 基准逐概率比对（4 项，需权重）
   reference/           参考请求 + PyTorch 参考输出（金标准）
 benchmarks/
   benchmark.py  复现 README 性能表的测量脚本
 examples/
   request.json  三种题型齐全、可直接运行的示例请求
-.github/workflows/ci.yml   Linux 上跑协议层测试（Python 3.10 / 3.13）
+demo/
+  snake_game.py  贪吃蛇环境（从原仓库逐字节搬来，未改一行）
+  controller.py  代码规划器 + 模型 tiebreak，以及适配移植版的 MlxEngine
+  play.py        跑一局 → 生成自包含的 HTML 回放页面
+.github/workflows/ci.yml   Linux 上跑「不需要 MLX」的 32 项测试（Python 3.10 / 3.13）
 guide.html                 本页
 README.md / README.zh-CN.md  完整文档</code></pre>
 
@@ -1044,7 +1049,7 @@ README.md / README.zh-CN.md  完整文档</code></pre>
 <footer>
   <div class="wrap">
     <p class="zh" style="margin-bottom:6px">
-      <strong>正确性数字</strong>（19 项测试全通过、最大概率偏差 1.56e-07、hidden state 误差 1.006e-04）
+      <strong>正确性数字</strong>（36 项测试全通过、最大概率偏差 1.56e-07、hidden state 误差 1.006e-04）
       已在 Apple M4 / 16 GB 上实测复核；<strong>性能数字</strong>取自仓库自带的
       <code>benchmarks/benchmark.py</code>，可用上文命令一键复现。
       完整说明见 <a href="README.zh-CN.md">README.zh-CN.md</a> 与

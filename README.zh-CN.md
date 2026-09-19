@@ -28,7 +28,7 @@
 | 与 PyTorch（fp32）最大概率偏差 | **1.6e-07** |
 | backbone 末层 hidden state 最大绝对误差 | 1.0e-04（数值量级达 67.6） |
 | 概率分布归一化 | 全部通过 |
-| 测试套件 | **19 项全部通过** |
+| 测试套件 | **36 项全部通过**（其中 4 项无权重时跳过） |
 
 语义在基准用例上全部一致：
 
@@ -176,13 +176,31 @@ python -m unittest discover -s tests -p "test_contract.py" -v
 NANOJEV_CHECKPOINT=/path/to/checkpoints/NanoJev python -m unittest discover -s tests -v
 ```
 
-共 **19 项测试**（15 项协议层 + 4 项等价性）。没有 checkpoint 时那 4 项会**跳过而不是失败**，
-所以刚克隆下来也能跑。
+共 **36 项测试**：15 项协议层、17 项 demo、4 项等价性。没有 checkpoint 时那 4 项会**跳过而不是
+失败**，所以刚克隆下来也能跑其中的 **32 项**。
 
 CI 在 Linux 上覆盖协议层。等价性测试刻意不进 CI：MLX 在无头 / 无 GPU 环境中**导入即崩溃**
 （[ml-explore/mlx#3148](https://github.com/ml-explore/mlx/issues/3148)），而 GitHub 托管的
 macOS runner 不提供 Metal 设备。这也正是把输出路径中纯逻辑的那一半拆到
 `nanojev_mlx.answers`、不引入 MLX 的原因。
+
+## 演示：看它玩贪吃蛇
+
+本仓库其他地方，模型的输出都是 JSON——对程序是正确的输出，对人却是糟糕的第一印象。
+演示脚本在你本机 GPU 上跑完整一局，写出**一个自包含的 HTML 页面**：不需要服务器、不需要
+联网、不依赖任何 CDN：
+
+```bash
+python -m demo.play --checkpoint-dir checkpoints/games/variants/games_gold_seed17 --open
+```
+
+页面会逐步回放这一局，并在**每一步**展示模型给**每个**候选走法分配的概率——这正是逐
+token 生成的模型在结构上无法展示的东西。
+
+它需要的是贪吃蛇专用的 checkpoint，不是根发布版——下载方式见
+[`demo/README.md`](demo/README.md)。注意页面会把这个架构暴露出来：代码规划器先过滤掉会
+碰撞的走法、保留到食物静态最短路径上的那些；**只有在剩下两个及以上候选时**才问模型。
+只剩一个时候选时，走法是被强制的，**根本不会调用模型**。
 
 ## 原理
 
