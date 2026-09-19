@@ -187,24 +187,29 @@ curl -X POST http://127.0.0.1:8765/api/evaluate \
 
 ## Testing
 
-Two layers, split by what they need:
+Three layers, split by what they need:
 
 | Suite | Needs | Runs on |
 |---|---|---|
-| `tests/test_contract.py` — request validation, answer assembly | Python only | any platform; no MLX, no GPU, no weights |
+| `tests/test_contract.py` — request validation, answer assembly | Python only | any platform |
+| `tests/test_demo.py` — Snake environment, planner, episode loop | Python only (stub engine) | any platform |
+| `tests/test_live.py` — the live HTTP server, driven over loopback | Python only (stub engine) | any platform |
 | `tests/test_equivalence.py` — probabilities vs the PyTorch reference | MLX + a 2.4 GB checkpoint | Apple Silicon |
+| `tests/test_snake_equivalence.py` — decision parity on real Snake states | MLX + the Snake checkpoint | Apple Silicon |
 
 ```bash
-# Protocol layer only — no MLX, no GPU, no weights. This is what CI runs.
-python -m unittest discover -s tests -p "test_contract.py" -v
+# Everything that needs no MLX, no GPU and no weights — this is what CI runs.
+python -m unittest discover -s tests -v
 
-# Everything, including the numerical equivalence check
-NANOJEV_CHECKPOINT=/path/to/checkpoints/NanoJev python -m unittest discover -s tests -v
+# Everything, including both numerical equivalence checks
+NANOJEV_CHECKPOINT=/path/to/checkpoints/NanoJev \
+NANOJEV_GAMES_CHECKPOINT=/path/to/variants/games_gold_seed17 \
+python -m unittest discover -s tests -v
 ```
 
-**40 tests** in total: 15 protocol, 17 demo, 8 equivalence (4 against the root fixture, 4 against
-real Snake decision points). The 8 equivalence tests need MLX plus a 2.4 GB checkpoint and skip
-rather than fail, so a bare checkout still runs **32 of them**.
+**49 tests** in total: 15 protocol, 17 demo, 9 live, 8 equivalence (4 against the root
+fixture, 4 against real Snake decision points). The 8 equivalence tests need MLX plus a
+2.4 GB checkpoint and skip rather than fail, so a bare checkout still runs **41 of them**.
 
 CI covers the protocol layer on Linux. The equivalence tests deliberately do not run there:
 MLX crashes on import in headless, GPU-less environments
@@ -225,6 +230,16 @@ python -m demo.play --checkpoint-dir checkpoints/games/variants/games_gold_seed1
 The page steps through the episode and shows, at every decision, the probability the
 model put on **each** offered move before committing to one. That is the thing a
 token-stream model structurally cannot show you.
+
+Prefer it live? `demo.live` serves the same episode over HTTP and updates the board as
+each decision is actually computed — play/pause, speed control, and click-to-take-over so
+you can play a move yourself. The model is queried first, so you see what it wanted before
+you overrode it:
+
+```bash
+python -m demo.live --checkpoint-dir checkpoints/games/variants/games_gold_seed17
+# open http://127.0.0.1:8770
+```
 
 It needs the Snake checkpoint, not the root release — see
 [`demo/README.md`](demo/README.md) for the download. Note the architecture it makes

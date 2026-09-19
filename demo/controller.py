@@ -148,87 +148,149 @@ class MlxEngine:
         )
 
 
-def run_episode(engine, size=12, seed=61005, controller="greedy", max_steps=256):
-    """Play one episode. Returns the recorded trace plus final statistics."""
-    if controller not in ("greedy", "sample"):
-        raise ValueError("controller must be 'greedy' or 'sample'")
-    if type(max_steps) is not int or max_steps < 1:
-        raise ValueError("max_steps must be a positive integer")
+class EpisodeSession:
+    """One Snake episode, advanced one decision at a time.
 
-    state = snake.make_snake(size, seed)
-    initial_state = copy.deepcopy(state)
-    rng = random.Random(seed)
-    trace, status = [], None
+    `run_episode` drives this in a loop; the live server drives it from HTTP requests.
+    Both therefore execute exactly the same code, so a live game cannot drift from a
+    recorded one -- and the tests that cover the loop cover both.
 
-    while status is None:
-        if state["done"]:
-            status = state["outcome"]
-            break
-        if len(trace) >= max_steps:
-            status = "horizon_survived"
-            break
+    Pass `override_action` to `step()` to play one move yourself. The model is still
+    queried first, so you can see what it thought before you overrode it, and the
+    override is validated against the planner's candidates -- a human cannot play a
+    move the planner would have filtered out as colliding.
+    """
 
-        plan = plan_candidates(state)
+    def __init__(self, engine, size=12, seed=61005, controller="greedy", max_steps=256):
+        if controller not in ("greedy", "sample"):
+            raise ValueError("controller must be 'greedy' or 'sample'")
+        if type(max_steps) is not int or max_steps < 1:
+            raise ValueError("max_steps must be a positive integer")
+        self.engine = engine
+        self.size = size
+        self.seed = seed
+        self.controller = controller
+        self.max_steps = max_steps
+        self.state = snake.make_snake(size, seed)
+        self.initial_state = copy.deepcopy(self.state)
+        self.rng = random.Random(seed)
+        self.trace = []
+        self.status = None
+
+    @property
+    def done(self) -> bool:
+        return self.status is not None
+
+    def _settle(self):
+        """Set the terminal status if the episode is over as of now."""
+        if self.state["done"]:
+            self.status = self.state["outcome"]
+        elif len(self.trace) >= self.max_steps:
+            self.status = "horizon_survived"
+
+    def step(self, override_action=None):
+        """Advance one decision. Returns the step record, or None if the snake is
+        trapped -- no legal move left, so the episode ends without one."""
+        if self.done:
+            raise ValueError("episode already finished")
+        self._settle()
+        if self.done:
+            return None
+
+        plan = plan_candidates(self.state)
         actions = plan["offered_actions"]
         if not actions:
-            status = "trapped"
-            break
+            self.status = "trapped"
+            return None
 
+        before = self.state
         if len(actions) == 1:
             probabilities, actor = {actions[0]: 1.0}, "forced_move"
         else:
-            request = {"id": f"snake:{seed}:step:{len(trace)}", **render_composed_request(state, actions)}
-            response = engine.predict({"states": [copy.deepcopy(request)]}, temperature=1.0)
+            request = {
+                "id": f"snake:{self.seed}:step:{len(self.trace)}",
+                **render_composed_request(before, actions),
+            }
+            response = self.engine.predict({"states": [copy.deepcopy(request)]}, temperature=1.0)
             returned = response.get("states", [])
             if len(returned) != 1 or returned[0].get("id") != request["id"]:
                 raise ValueError("Choice response ID mismatch")
             answer = returned[0].get("answers", {}).get("action")
-            probabilities = validate_choice(answer, actions)
-            actor = "model_tiebreak"
+            probabilities, actor = validate_choice(answer, actions), "model_tiebreak"
 
-        before = state
-        action, draw = (
-            (next(iter(probabilities)), None)
-            if actor == "forced_move"
-            else choose_action(probabilities, controller, rng)
-        )
-        after = snake.step(before, action)
+        if override_action is not None:
+            if override_action not in actions:
+                raise ValueError(f"{override_action!r} is not among the offered moves {actions}")
+            chosen, draw, actor = override_action, None, "human_override"
+        elif actor == "forced_move":
+            chosen, draw = next(iter(probabilities)), None
+        else:
+            chosen, draw = choose_action(probabilities, self.controller, self.rng)
+
+        after = snake.step(before, chosen)
         if after["done"] and after["outcome"] != "win":
             raise RuntimeError("Common planner admitted an immediately colliding action")
 
         total = sum(probabilities.values())
-        trace.append(
-            {
-                "step_index": len(trace),
-                "state": physical_state(before),
-                "action": action,
-                "actor": actor,
-                "probabilities": probabilities,
-                "sampling_probabilities": {k: v / total for k, v in probabilities.items()},
-                "controller_draw": draw,
-                "candidate_order": list(probabilities),
-                "planner": plan,
-                "ate_food": after["score"] > before["score"],
-                "next_state": physical_state(after),
-            }
-        )
-        state = after
+        record = {
+            "step_index": len(self.trace),
+            "state": physical_state(before),
+            "action": chosen,
+            "actor": actor,
+            "probabilities": probabilities,
+            "sampling_probabilities": {k: v / total for k, v in probabilities.items()},
+            "controller_draw": draw,
+            "candidate_order": list(probabilities),
+            "planner": plan,
+            "ate_food": after["score"] > before["score"],
+            "next_state": physical_state(after),
+        }
+        self.trace.append(record)
+        self.state = after
+        self._settle()
+        return record
 
-    final = physical_state(state)
-    return {
-        "schema": "nanojev-mlx-snake-demo-v1",
-        "size": size,
-        "seed": seed,
-        "controller": controller,
-        "horizon": max_steps,
-        "initial_state": physical_state(initial_state),
-        "final_state": final,
-        "outcome": status,
-        "full_board_win": status == "win",
-        "horizon_survived": status == "horizon_survived",
-        "survival_steps": len(trace),
-        "food_collected": final["score"] - initial_state["score"],
-        "forced_moves": sum(row["actor"] == "forced_move" for row in trace),
-        "model_decisions": sum(row["actor"] == "model_tiebreak" for row in trace),
-        "steps": trace,
-    }
+    def snapshot(self) -> dict:
+        """Everything a client needs to draw the current position."""
+        return {
+            "state": physical_state(self.state),
+            "done": self.done,
+            "outcome": self.status,
+            "steps": len(self.trace),
+            "food_collected": self.state["score"] - self.initial_state["score"],
+            "model_decisions": sum(r["actor"] == "model_tiebreak" for r in self.trace),
+            "forced_moves": sum(r["actor"] == "forced_move" for r in self.trace),
+            "human_overrides": sum(r["actor"] == "human_override" for r in self.trace),
+        }
+
+    def result(self) -> dict:
+        if not self.done:
+            raise ValueError("episode is still running")
+        final = physical_state(self.state)
+        trace = self.trace
+        return {
+            "schema": "nanojev-mlx-snake-demo-v1",
+            "size": self.size,
+            "seed": self.seed,
+            "controller": self.controller,
+            "horizon": self.max_steps,
+            "initial_state": physical_state(self.initial_state),
+            "final_state": final,
+            "outcome": self.status,
+            "full_board_win": self.status == "win",
+            "horizon_survived": self.status == "horizon_survived",
+            "survival_steps": len(trace),
+            "food_collected": final["score"] - self.initial_state["score"],
+            "forced_moves": sum(row["actor"] == "forced_move" for row in trace),
+            "model_decisions": sum(row["actor"] == "model_tiebreak" for row in trace),
+            "human_overrides": sum(row["actor"] == "human_override" for row in trace),
+            "steps": trace,
+        }
+
+
+def run_episode(engine, size=12, seed=61005, controller="greedy", max_steps=256):
+    """Play one episode to completion. Returns the recorded trace plus statistics."""
+    session = EpisodeSession(engine, size=size, seed=seed, controller=controller, max_steps=max_steps)
+    while not session.done:
+        session.step()
+    return session.result()

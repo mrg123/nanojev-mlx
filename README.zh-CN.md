@@ -162,23 +162,29 @@ result = run_prediction(model, {
 
 ## 测试
 
-分两层，按所需条件划分：
+分三层，按所需条件划分：
 
 | 套件 | 需要什么 | 能跑在哪 |
 |---|---|---|
-| `tests/test_contract.py` —— 请求校验与答案组装 | 只要 Python | 任何平台；不需要 MLX、GPU、权重 |
+| `tests/test_contract.py` —— 请求校验与答案组装 | 只要 Python | 任何平台 |
+| `tests/test_demo.py` —— 贪吃蛇环境、规划器、对局循环 | 只要 Python（桩引擎） | 任何平台 |
+| `tests/test_live.py` —— 实时 HTTP 服务，走本地回环真实请求 | 只要 Python（桩引擎） | 任何平台 |
 | `tests/test_equivalence.py` —— 与 PyTorch 参考逐概率比对 | MLX + 2.4 GB checkpoint | Apple 芯片 |
+| `tests/test_snake_equivalence.py` —— 真实贪吃蛇决策点的一致性 | MLX + 贪吃蛇 checkpoint | Apple 芯片 |
 
 ```bash
-# 只跑协议层 —— 不需要 MLX、GPU、权重。CI 跑的就是这一条
-python -m unittest discover -s tests -p "test_contract.py" -v
+# 不需要 MLX、GPU、权重的全部测试 —— CI 跑的就是这一条
+python -m unittest discover -s tests -v
 
-# 全部，含数值等价性验证
-NANOJEV_CHECKPOINT=/path/to/checkpoints/NanoJev python -m unittest discover -s tests -v
+# 全部，含两项数值等价性验证
+NANOJEV_CHECKPOINT=/path/to/checkpoints/NanoJev \
+NANOJEV_GAMES_CHECKPOINT=/path/to/variants/games_gold_seed17 \
+python -m unittest discover -s tests -v
 ```
 
-共 **40 项测试**：15 项协议层、17 项 demo、8 项等价性（4 项对根用例，4 项对真实贪吃蛇决策点）。
-那 8 项需要 MLX 加 2.4 GB 权重，缺失时**跳过而不是失败**，所以刚克隆下来也能跑其中的 **32 项**。
+共 **49 项测试**：15 项协议层、17 项 demo、9 项实时、8 项等价性（4 项对根用例，4 项对真实
+贪吃蛇决策点）。那 8 项需要 MLX 加 2.4 GB 权重，缺失时**跳过而不是失败**，所以刚克隆下来
+也能跑其中的 **41 项**。
 
 CI 在 Linux 上覆盖协议层。等价性测试刻意不进 CI：MLX 在无头 / 无 GPU 环境中**导入即崩溃**
 （[ml-explore/mlx#3148](https://github.com/ml-explore/mlx/issues/3148)），而 GitHub 托管的
@@ -197,6 +203,15 @@ python -m demo.play --checkpoint-dir checkpoints/games/variants/games_gold_seed1
 
 页面会逐步回放这一局，并在**每一步**展示模型给**每个**候选走法分配的概率——这正是逐
 token 生成的模型在结构上无法展示的东西。
+
+想要**实时**而不是回放？`demo.live` 通过 HTTP 提供同一局，棋盘随每一次决策**当场算出来**
+而更新，带播放/暂停、调速，以及点击接管——你可以自己走一步，模型仍会先被问一次，好让你
+看到它原本想走哪：
+
+```bash
+python -m demo.live --checkpoint-dir checkpoints/games/variants/games_gold_seed17
+# 打开 http://127.0.0.1:8770
+```
 
 它需要的是贪吃蛇专用的 checkpoint，不是根发布版——下载方式见
 [`demo/README.md`](demo/README.md)。注意页面会把这个架构暴露出来：代码规划器先过滤掉会

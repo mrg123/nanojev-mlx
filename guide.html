@@ -523,8 +523,233 @@
 </section>
 
 <!-- ============ 6 ============ -->
-<section id="numbers">
+<section id="arch">
   <h2><span class="num">6</span>
+    <span class="zh">代码架构：四层库，加一个叠在上面的应用</span>
+    <span class="en">Architecture: a four-layer library with an app on top</span>
+  </h2>
+
+  <figure>
+    <svg viewBox="0 0 860 452" role="img" aria-label="Module architecture diagram">
+      <defs>
+        <marker id="ar2" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+          <path d="M0,0 L7,3 L0,6 z" fill="currentColor" opacity=".45"/>
+        </marker>
+      </defs>
+      <g font-family="ui-monospace,Menlo,monospace" font-size="12" fill="currentColor">
+        <g font-size="9.5" opacity=".5" letter-spacing=".05em">
+          <text x="0" y="42">APP</text>
+          <text x="0" y="122">ENTRY</text>
+          <text x="0" y="190">ORCHEST.</text>
+          <text x="0" y="302">CAPABILITY</text>
+          <text x="0" y="418">RUNTIME</text>
+        </g>
+
+        <!-- application -->
+        <rect x="100" y="8" width="760" height="62" rx="10" fill="none" stroke="currentColor" stroke-opacity=".55" stroke-width="1.5"/>
+        <text x="114" y="28" font-weight="600">demo/ · Snake demo — an app built on the library</text>
+        <text x="114" y="45" font-size="10.5" opacity=".6">snake_game.py · controller.py (MlxEngine) · play.py · live.py</text>
+        <text x="114" y="61" font-size="10.5" opacity=".6">imports MLX lazily, inside functions — testable with no GPU</text>
+
+        <line x1="480" y1="70" x2="480" y2="92" stroke="currentColor" stroke-opacity=".45" marker-end="url(#ar2)"/>
+
+        <!-- entry -->
+        <rect x="100" y="96" width="245" height="44" rx="9" fill="none" stroke="currentColor" stroke-opacity=".3"/>
+        <text x="114" y="115" font-weight="600">CLI</text>
+        <text x="114" y="131" font-size="10.5" opacity=".6">python -m nanojev_mlx.predict</text>
+
+        <rect x="357" y="96" width="245" height="44" rx="9" fill="none" stroke="currentColor" stroke-opacity=".3"/>
+        <text x="371" y="115" font-weight="600">HTTP service</text>
+        <text x="371" y="131" font-size="10.5" opacity=".6">serve.py · POST /api/evaluate</text>
+
+        <rect x="614" y="96" width="246" height="44" rx="9" fill="none" stroke="currentColor" stroke-opacity=".3"/>
+        <text x="628" y="115" font-weight="600">Python API</text>
+        <text x="628" y="131" font-size="10.5" opacity=".6">from nanojev_mlx import …</text>
+
+        <line x1="480" y1="140" x2="480" y2="160" stroke="currentColor" stroke-opacity=".45" marker-end="url(#ar2)"/>
+
+        <!-- orchestration -->
+        <rect x="100" y="164" width="760" height="44" rx="9" fill="none" stroke="currentColor" stroke-opacity=".45"/>
+        <text x="114" y="183" font-weight="600">predict.py · run_prediction</text>
+        <text x="114" y="199" font-size="10.5" opacity=".6">validate → prepare → forward → softmax → assemble</text>
+
+        <line x1="284" y1="208" x2="284" y2="228" stroke="currentColor" stroke-opacity=".45" marker-end="url(#ar2)"/>
+        <line x1="670" y1="208" x2="670" y2="228" stroke="currentColor" stroke-opacity=".45" marker-end="url(#ar2)"/>
+
+        <!-- capability: needs MLX -->
+        <rect x="100" y="232" width="368" height="132" rx="10" fill="none" stroke="currentColor" stroke-opacity=".55" stroke-width="1.5"/>
+        <text x="114" y="252" font-size="10.5" opacity=".7">needs MLX / Metal</text>
+        <rect x="112" y="262" width="344" height="42" rx="7" fill="currentColor" opacity=".05"/>
+        <text x="126" y="280" font-weight="600">model.py · DecisionModel</text>
+        <text x="126" y="295" font-size="10.5" opacity=".6">weight map · backbone · one forward</text>
+        <rect x="112" y="312" width="344" height="42" rx="7" fill="currentColor" opacity=".05"/>
+        <text x="126" y="330" font-weight="600">head.py · DecisionHead</text>
+        <text x="126" y="345" font-size="10.5" opacity=".6">scalar logit · set-attention</text>
+
+        <!-- capability: pure python -->
+        <rect x="482" y="232" width="378" height="132" rx="10" fill="none" stroke="currentColor" stroke-opacity=".55" stroke-width="1.5"/>
+        <text x="496" y="252" font-size="10.5" opacity=".7">pure Python — no MLX</text>
+        <rect x="494" y="262" width="354" height="42" rx="7" fill="currentColor" opacity=".05"/>
+        <text x="508" y="280" font-weight="600">text.py · validate / prepare</text>
+        <text x="508" y="295" font-size="10.5" opacity=".6">request → token paths</text>
+        <rect x="494" y="312" width="354" height="42" rx="7" fill="currentColor" opacity=".05"/>
+        <text x="508" y="330" font-weight="600">answers.py · from_probabilities</text>
+        <text x="508" y="345" font-size="10.5" opacity=".6">probabilities → decision</text>
+
+        <line x1="480" y1="364" x2="480" y2="386" stroke="currentColor" stroke-opacity=".45" marker-end="url(#ar2)"/>
+
+        <!-- runtime -->
+        <rect x="100" y="390" width="760" height="48" rx="9" fill="currentColor" opacity=".09"/>
+        <text x="114" y="411" font-weight="600">MLX runtime · mlx_lm Qwen3Model · Metal GPU</text>
+        <text x="114" y="427" font-size="10.5" opacity=".6">the only layer that must have an Apple GPU under it</text>
+      </g>
+    </svg>
+    <figcaption class="zh">依赖只向下指。右侧一整列<strong>不含任何 MLX 依赖</strong>，右上角的 <code>demo/</code> 也只在函数内部惰性导入——这正是它们能在无 GPU 的 CI 里被测试的原因。</figcaption>
+    <figcaption class="en">Dependencies point downward only. The right column carries <strong>no MLX dependency</strong>, and <code>demo/</code> at the top imports it lazily inside functions — which is exactly what makes both testable on a GPU-less CI.</figcaption>
+  </figure>
+
+  <div class="zh">
+    <p>
+      项目分两块：<code>nanojev_mlx/</code> 是移植本身（库），<code>demo/</code> 是建在它上面的贪吃蛇应用。
+      库内部又按职责分四层。
+    </p>
+    <p>
+      分层的价值不在于整齐，而在于<strong>把「必须依赖 MLX / Metal」的部分压到最小</strong>——
+      因为 MLX 在没有 GPU 的环境里<strong>连 import 都会崩</strong>。所以「哪个文件碰 MLX」不是风格问题，
+      而是「这套测试能不能在普通 CI 容器里跑」的硬约束。
+    </p>
+  </div>
+  <div class="en">
+    <p>
+      The project has two parts: <code>nanojev_mlx/</code> is the port itself (the library), and
+      <code>demo/</code> is a Snake application built on top of it. Inside the library there are four
+      layers, split by responsibility.
+    </p>
+    <p>
+      The value of the split is not tidiness — it is <strong>squeezing the part that needs MLX / Metal
+      down to the minimum</strong>, because MLX <strong>crashes merely on import</strong> where there is
+      no GPU. So “which file touches MLX” is not a style question; it is the hard constraint that decides
+      whether the suite can run in an ordinary CI container.
+    </p>
+  </div>
+
+  <h3><span class="zh">每层负责什么</span><span class="en">What each layer owns</span></h3>
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th class="zh">层</th><th class="en">Layer</th>
+          <th class="zh">模块</th><th class="en">Modules</th>
+          <th class="zh">职责</th><th class="en">Responsibility</th>
+          <th class="zh">依赖</th><th class="en">Depends on</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="zh">应用层</td><td class="en">Application</td>
+          <td><code>demo/</code></td>
+          <td class="zh">贪吃蛇环境、控制器、回放页、实时服务</td><td class="en">Snake environment, controller, replay page, live server</td>
+          <td class="zh">库（惰性）</td><td class="en">The library (lazily)</td>
+        </tr>
+        <tr>
+          <td class="zh">调用层</td><td class="en">Entry</td>
+          <td><code>predict:main</code><br><code>serve.py</code><br><code>__init__.py</code></td>
+          <td class="zh">命令行、HTTP、Python 三种入口</td><td class="en">CLI, HTTP, and Python entry points</td>
+          <td class="zh">编排层</td><td class="en">Orchestration</td>
+        </tr>
+        <tr>
+          <td class="zh">编排层</td><td class="en">Orchestration</td>
+          <td><code>predict.py</code></td>
+          <td class="zh">请求校验、分批、softmax、结果组装</td><td class="en">Validation, batching, softmax, assembly</td>
+          <td class="zh">模型层 + 纯逻辑层</td><td class="en">Model + pure logic</td>
+        </tr>
+        <tr>
+          <td class="zh">模型层</td><td class="en">Model</td>
+          <td><code>model.py</code><br><code>head.py</code></td>
+          <td class="zh">权重映射、backbone 前向、决策头打分</td><td class="en">Weight mapping, backbone forward, head scoring</td>
+          <td><strong>MLX / mlx_lm</strong></td>
+        </tr>
+        <tr>
+          <td class="zh">纯逻辑层</td><td class="en">Pure logic</td>
+          <td><code>text.py</code><br><code>answers.py</code></td>
+          <td class="zh">路径构造、请求校验、概率 → 答案</td><td class="en">Path building, request validation, probabilities → answer</td>
+          <td class="zh"><strong>仅标准库</strong></td><td class="en"><strong>Stdlib only</strong></td>
+        </tr>
+        <tr>
+          <td class="zh">运行时</td><td class="en">Runtime</td>
+          <td>MLX · mlx_lm · Metal</td>
+          <td class="zh">张量计算与 GPU 执行</td><td class="en">Tensor compute and GPU execution</td>
+          <td class="zh">Apple 芯片</td><td class="en">Apple silicon</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3><span class="zh">一条请求经过哪些模块</span><span class="en">Which module handles which step</span></h3>
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th class="zh">模块</th><th class="en">Module</th>
+          <th class="zh">做什么</th><th class="en">What it does</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td><code>text.validate_request</code></td>
+          <td class="zh">校验结构、题型、候选数量范围（choice 2–255、score 2–10）</td>
+          <td class="en">Checks structure, question type, candidate ranges (choice 2–255, score 2–10)</td></tr>
+        <tr><td>2</td><td><code>text.prepare_examples</code></td>
+          <td class="zh">状态 + 问题 + 候选 → N 条 token 路径</td>
+          <td class="en">State + question + candidates → N token paths</td></tr>
+        <tr><td>3</td><td><code>model.logits_for</code></td>
+          <td class="zh">右填充成矩阵，一次 backbone 前向，取末位 hidden state 并分组</td>
+          <td class="en">Right-pad into one matrix, one backbone pass, take the last hidden state, group</td></tr>
+        <tr><td>4</td><td><code>head.DecisionHead</code></td>
+          <td class="zh">每条候选算 logit；choice 题再做集合内自注意力修正</td>
+          <td class="en">One logit per candidate; choice questions add a set-attention correction</td></tr>
+        <tr><td>5</td><td><code>predict.run_prediction</code></td>
+          <td class="zh">softmax 成概率分布，按 batch 组装成结果</td>
+          <td class="en">Softmax into a distribution, assembled into the result</td></tr>
+        <tr><td>6</td><td><code>answers.answer_from_probabilities</code></td>
+          <td class="zh">按题型产出 <code>p_true</code> / <code>choice</code> / <code>score</code></td>
+          <td class="en">Produces <code>p_true</code> / <code>choice</code> / <code>score</code> per type</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3><span class="zh">四个值得注意的设计决定</span><span class="en">Four design decisions worth noticing</span></h3>
+  <div class="grid">
+    <div class="card">
+      <h4 class="zh">为什么 <code>answers.py</code> 要单独拆</h4>
+      <h4 class="en">Why <code>answers.py</code> is its own module</h4>
+      <p class="zh">它只做数学与结构组装，<strong>不导入 MLX</strong>。MLX 在无头、无 GPU 的环境里导入即崩溃，把它隔离出去后，协议层才能在普通 Linux 容器里跑 CI。</p>
+      <p class="en">It is pure math and structural assembly, with <strong>no MLX import</strong>. MLX crashes on import in headless, GPU-less environments; isolating it is what lets the protocol layer run CI on an ordinary Linux container.</p>
+    </div>
+    <div class="card">
+      <h4 class="zh">惰性导入贯穿两层</h4>
+      <h4 class="en">Lazy imports run through both tiers</h4>
+      <p class="zh"><code>demo/</code> 里的模块在<strong>函数内部</strong>才 <code>from nanojev_mlx import …</code>，模块级一行都不碰 MLX。这不是洁癖：它让 <code>test_live.py</code> 能在无 MLX、无权重的环境里跑真实 HTTP 请求路径。</p>
+      <p class="en">Modules in <code>demo/</code> only do <code>from nanojev_mlx import …</code> <strong>inside functions</strong>, never at module level. That is not fussiness: it is what lets <code>test_live.py</code> exercise the real HTTP request path with no MLX and no weights.</p>
+    </div>
+    <div class="card">
+      <h4 class="zh">权重映射为什么放在<em>加载时</em></h4>
+      <h4 class="en">Why weight mapping happens <em>at load time</em></h4>
+      <p class="zh"><code>model.map_weights</code> 在读 <code>best.safetensors</code> 的同一刻，把 PyTorch 融合的 <code>in_proj_weight</code> 切成 q/k/v 三份。所以既不需要转换脚本，磁盘上也不会多出第二份权重。</p>
+      <p class="en"><code>model.map_weights</code> splits PyTorch's fused <code>in_proj_weight</code> into q/k/v at the moment <code>best.safetensors</code> is read. No conversion script, and no second copy of the weights on disk.</p>
+    </div>
+    <div class="card">
+      <h4 class="zh">候选为什么能塞进一次前向</h4>
+      <h4 class="en">Why every candidate fits one pass</h4>
+      <p class="zh">右填充 + 纯因果掩码，使真实位置根本注意不到 padding，与 HF 的「因果 + padding 双掩码」数值等价。若不等价，就必须自己写注意力算子。</p>
+      <p class="en">Right-padding plus a plain causal mask means real positions cannot attend to padding at all, matching HF's combined causal + padding mask. Without that equivalence, a custom attention kernel would be required.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 7 ============ -->
+<section id="numbers">
+  <h2><span class="num">7</span>
     <span class="zh">实测数字（以及它们是怎么测的）</span>
     <span class="en">The measured numbers (and how they were taken)</span>
   </h2>
@@ -634,7 +859,7 @@
       <tbody>
         <tr>
           <td class="zh">测试套件</td><td class="en">Test suite</td>
-          <td><strong>40 / 40 pass</strong></td>
+          <td><strong>49 / 49 pass</strong></td>
         </tr>
         <tr>
           <td class="zh">与 PyTorch 最大概率偏差</td><td class="en">Max probability deviation vs PyTorch</td>
@@ -666,9 +891,9 @@
   </div>
 </section>
 
-<!-- ============ 7 ============ -->
+<!-- ============ 8 ============ -->
 <section id="start">
-  <h2><span class="num">7</span>
+  <h2><span class="num">8</span>
     <span class="zh">快速开始（5 分钟）</span>
     <span class="en">Quick start (5 minutes)</span>
   </h2>
@@ -830,17 +1055,17 @@ print(result["states"][0]["answers"])</code></pre>
   python -m unittest discover -s tests -v</code></pre>
   <p class="kbd-hint zh">
     不设 <code>NANOJEV_CHECKPOINT</code> 也能跑：需要权重的等价性测试会自动跳过，
-    剩下 32 项（协议层 15 + 演示 17）无需权重即可通过。
+    剩下 41 项（协议层 15 + 演示 17 + 实时 9）无需权重即可通过。
   </p>
   <p class="kbd-hint en">
     It also runs without <code>NANOJEV_CHECKPOINT</code>: the weight-dependent equivalence tests
-    skip themselves and the remaining 32 (15 protocol + 17 demo) pass with no weights at all.
+    skip themselves and the remaining 41 (15 protocol, 17 demo, 9 live) pass with no weights at all.
   </p>
 </section>
 
-<!-- ============ 8 ============ -->
+<!-- ============ 9 ============ -->
 <section id="layout">
-  <h2><span class="num">8</span>
+  <h2><span class="num">9</span>
     <span class="zh">项目结构：每个文件干什么</span>
     <span class="en">Project layout: what each file does</span>
   </h2>
@@ -855,6 +1080,8 @@ print(result["states"][0]["answers"])</code></pre>
 tests/
   test_contract.py     协议层：校验、概率归一、异常输入（15 项，无需权重/无需 MLX）
   test_demo.py         贪吃蛇环境、规划器、对局循环（17 项，用桩引擎，无需权重/无需 MLX）
+  test_live.py         实时 HTTP 服务，走本地回环真实请求（9 项，同上）
+  test_snake_equivalence.py  真实贪吃蛇决策点的一致性（4 项，需贪吃蛇权重）
   test_equivalence.py  数值等价：与 PyTorch 基准逐概率比对（4 项，需权重）
   reference/           参考请求 + PyTorch 参考输出（金标准）
 benchmarks/
@@ -865,7 +1092,8 @@ demo/
   snake_game.py  贪吃蛇环境（从原仓库逐字节搬来，未改一行）
   controller.py  代码规划器 + 模型 tiebreak，以及适配移植版的 MlxEngine
   play.py        跑一局 → 生成自包含的 HTML 回放页面
-.github/workflows/ci.yml   Linux 上跑「不需要 MLX」的 32 项测试（Python 3.10 / 3.13）
+  live.py        实时模式：起一个本地服务，浏览器里看着它一步步走，还能自己接管一步
+.github/workflows/ci.yml   Linux 上跑「不需要 MLX」的 41 项测试（Python 3.10 / 3.13）
 guide.html                 本页
 README.md / README.zh-CN.md  完整文档</code></pre>
 
@@ -895,9 +1123,9 @@ README.md / README.zh-CN.md  完整文档</code></pre>
   </div>
 </section>
 
-<!-- ============ 9 ============ -->
+<!-- ============ 10 ============ -->
 <section id="limits">
-  <h2><span class="num">9</span>
+  <h2><span class="num">10</span>
     <span class="zh">它<em>不是</em>什么：诚实的能力边界</span>
     <span class="en">What it is <em>not</em>: honest boundaries</span>
   </h2>
@@ -969,9 +1197,9 @@ README.md / README.zh-CN.md  完整文档</code></pre>
   </div>
 </section>
 
-<!-- ============ 10 ============ -->
+<!-- ============ 11 ============ -->
 <section id="glossary">
-  <h2><span class="num">10</span>
+  <h2><span class="num">11</span>
     <span class="zh">术语表</span>
     <span class="en">Glossary</span>
   </h2>
@@ -1049,7 +1277,7 @@ README.md / README.zh-CN.md  完整文档</code></pre>
 <footer>
   <div class="wrap">
     <p class="zh" style="margin-bottom:6px">
-      <strong>正确性数字</strong>（40 项测试全通过、最大概率偏差 1.56e-07、hidden state 误差 1.006e-04）
+      <strong>正确性数字</strong>（49 项测试全通过、最大概率偏差 1.56e-07、hidden state 误差 1.006e-04）
       已在 Apple M4 / 16 GB 上实测复核；<strong>性能数字</strong>取自仓库自带的
       <code>benchmarks/benchmark.py</code>，可用上文命令一键复现。
       完整说明见 <a href="README.zh-CN.md">README.zh-CN.md</a> 与

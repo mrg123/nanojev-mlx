@@ -41,6 +41,38 @@ A useful contrast — the same demo on the **root** checkpoint, which was never 
 Snake, splits its two-way decisions at 0.503 / 0.497. The game checkpoint is confident
 (0.760 / 0.240 on the opening move). That gap is the model actually knowing something.
 
+## Live mode
+
+The page above is a replay: it records an episode first, then plays it back. `demo.live`
+runs the same episode **live** instead — the board updates as each decision is actually
+computed on your GPU, and you can take over a move yourself:
+
+```bash
+python -m demo.live --checkpoint-dir checkpoints/games/variants/games_gold_seed17
+# then open http://127.0.0.1:8770
+```
+
+- the board updates live, with the probability bars for the decision being made
+- play / pause / single-step / speed
+- change board size or seed and start again
+- **click any candidate bar to play that move yourself.** The model is queried first, so
+  you see what it wanted before you overrode it, and your move is validated against the
+  planner's candidates — you cannot play a move the planner filtered out
+- running counts of model decisions, code-forced moves, and your own overrides
+
+### Why the browser does not own the game
+
+The browser is a display and a control surface only. The rules, the planner and the model
+all stay in Python, and the browser asks the server for one step at a time. Porting
+`snake_game.py` to JavaScript was the obvious shortcut, but then live mode would no
+longer be running the same environment as the reference results, and the fidelity
+argument above would simply stop applying to it.
+
+Live mode and recorded mode drive the same `EpisodeSession`. That is checked, not
+assumed: driving a full 256-step episode over HTTP with seed 61005 reproduces
+**27 food / 256 steps / alive at horizon** — identical to the recorded run and to the
+upstream published figure.
+
 ## What you need
 
 The Snake checkpoint — **not** the root release:
@@ -114,14 +146,17 @@ controller already expects.
 ## Tests
 
 `tests/test_demo.py` covers the environment, the planner and the episode loop with a
-stub engine — **no checkpoint and no MLX required**, so it runs in CI:
+stub engine, and `tests/test_live.py` starts the real HTTP server on a loopback port and
+drives it — **no checkpoint and no MLX required**, so both run in CI:
 
 ```bash
 python -m unittest discover -s tests -p "test_demo.py" -v
+python -m unittest discover -s tests -p "test_live.py" -v
 ```
 
-The most useful of them asserts that the composed controller **never admits a colliding
-action**: that is the entire contract of routing moves through the planner first.
+The most useful of them assert that the composed controller **never admits a colliding
+action** — the entire contract of routing moves through the planner first — and that a
+human override cannot bypass that filter either.
 
 ## Honest limitations
 
