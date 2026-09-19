@@ -1,0 +1,6 @@
+# 版本组合已在本机实测通过：macOS 26.5.1 / Apple M4 / Python 3.14.6
+mlx>=0.32.2
+mlx-lm>=0.31.3
+transformers>=5.0.0
+numpy>=2.0
+safetensors>=0.4

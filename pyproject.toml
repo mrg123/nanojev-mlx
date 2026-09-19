@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nanojev-mlx"
+version = "0.1.0"
+description = "Apple Silicon (MLX) port of NanoJev — a 0.6B parallel decision model with zero output-token decoding"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+keywords = ["mlx", "apple-silicon", "jev", "nanojev", "decision-model", "qwen3", "local-inference"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS :: MacOS X",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "mlx>=0.32.2",
+    "mlx-lm>=0.31.3",
+    "transformers>=5.0.0",
+    "numpy>=2.0",
+    "safetensors>=0.4",
+]
+
+[project.scripts]
+nanojev-mlx = "nanojev_mlx.predict:main"
+nanojev-mlx-serve = "nanojev_mlx.serve:main"
+
+[project.urls]
+Repository = "https://github.com/mrg123/nanojev-mlx"
+"Original NanoJev" = "https://github.com/TianyuCodings/NanoJev"
+
+[tool.setuptools]
+packages = ["nanojev_mlx"]

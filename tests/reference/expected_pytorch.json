@@ -1,0 +1,77 @@
+{
+  "schema_version": "pytorch-reference-v1",
+  "source": "NanoJev scripts/predict_toy_decisions.py (CPU fp32)",
+  "states": [
+    {
+      "id": "refund-check",
+      "answers": {
+        "team": {
+          "type": "choice",
+          "probabilities": {
+            "account": 1.3106337064527906e-06,
+            "billing": 0.9999973773956299,
+            "technical": 1.3580973927673767e-06
+          },
+          "choice": "billing",
+          "value": "billing"
+        },
+        "paid": {
+          "type": "boolean",
+          "probabilities": {
+            "false": 0.9826210141181946,
+            "true": 0.017378978431224823
+          },
+          "p_true": 0.017378978431224823,
+          "value": false
+        },
+        "impact": {
+          "type": "score",
+          "probabilities": {
+            "0": 0.6436066627502441,
+            "1": 0.0703614130616188,
+            "2": 0.1578861027956009,
+            "3": 0.12814588844776154
+          },
+          "score": 0.7705712839961052,
+          "level": 0,
+          "value": 0.7705712839961052
+        }
+      }
+    },
+    {
+      "id": "software-check",
+      "answers": {
+        "team": {
+          "type": "choice",
+          "probabilities": {
+            "billing": 0.0005964495940133929,
+            "technical": 0.9994035959243774
+          },
+          "choice": "technical",
+          "value": "technical"
+        },
+        "paid": {
+          "type": "boolean",
+          "probabilities": {
+            "false": 0.09498443454504013,
+            "true": 0.9050155282020569
+          },
+          "p_true": 0.9050155282020569,
+          "value": true
+        },
+        "impact": {
+          "type": "score",
+          "probabilities": {
+            "0": 1.8321066818316467e-05,
+            "1": 2.5020076463988516e-06,
+            "2": 0.9999765157699585,
+            "3": 2.625229171826504e-06
+          },
+          "score": 1.9999634092350789,
+          "level": 2,
+          "value": 1.9999634092350789
+        }
+      }
+    }
+  ]
+}
