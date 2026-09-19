@@ -1,11 +1,18 @@
 # nanojev-mlx
 
+**简体中文** | [English](README.md)
+
+[![tests](https://github.com/mrg123/nanojev-mlx/actions/workflows/ci.yml/badge.svg)](https://github.com/mrg123/nanojev-mlx/actions/workflows/ci.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 **NanoJev 的 Apple Silicon 原生移植 —— 用 MLX 在 Mac 上跑 0.6B 并行决策模型。**
 输入状态和问题，直接输出完整概率分布，零输出 token 解码。
 
-原版 NanoJev 硬性要求 CUDA。本移植**不改动模型本身**，只把决策头用 MLX 重新实现，
-于是它能在任何 Apple 芯片的 Mac 上原生跑在 Metal GPU 上——不需要 CUDA、不需要
-PyTorch、不需要联网。
+原版 NanoJev **以 CUDA 为先**：记录的环境面向 A100、bf16 精度，研究脚本也大多限定
+CUDA。但它的推理脚本确实能在 Apple 芯片上通过 PyTorch MPS 跑起来——下面基准里的
+「PyTorch + MPS」就是它——代价是必须拖上 PyTorch，内存和启动时间也明显更高。本移植
+**不改动模型本身**，只把决策头改用 MLX 重新实现，于是同一份权重可以原生跑在 Metal
+GPU 上，且完全不依赖 PyTorch。
 
 > 非官方社区移植，与 NanoJev 及 TypeSafe 作者无关。
 
@@ -45,19 +52,39 @@ Apple M4 / 16GB 统一内存 / macOS 26.5.1 / Python 3.14.6 / MLX 0.32.2。
 
 | 指标 | PyTorch + MPS | **nanojev-mlx** | 变化 |
 |---|---:|---:|---:|
-| 稳态单次耗时 | 470 ms | **352 ms** | **快 1.3×** |
+| 稳态单次耗时 | 456 ms | **344 ms** | **快 1.3×** |
 | 峰值内存 | 4.91 GB | **2.75 GB** | **−44%** |
-| 冷启动到首次出结果 | 9.9 s | **3.8 s** | **快 2.6×** |
-| 依赖体积 | PyTorch（约 2.5 GB） | MLX（约 65 MB） | — |
+| 冷启动到首次出结果 | 8.2 s | **2.2 s** | **快 3.8×** |
+| 运行时依赖占用 | PyTorch 约 590 MB | **MLX 约 210 MB** | **小约 2.8×** |
+
+在你自己的机器上复现全部数字：
+
+```bash
+python benchmarks/benchmark.py --checkpoint-dir checkpoints/NanoJev \
+    --backend both --nanojev-repo ../NanoJev
+```
+
+`--backend both` 会在各自独立的子进程里测量，避免两套栈共存污染内存读数。只测 MLX 移植版
+的话，去掉 `--nanojev-repo` 和 `--backend both` 即可。
 
 **关于加速比，说实话。** 1.3× 是真实数字但不算惊艳，原因是结构性的：这个模型
 **为每一条候选路径完整跑一遍 28 层 backbone**，所以算力瓶颈在 backbone，而不是本移植
 重写的那 20 万参数决策头。MLX 在内存和启动上优势明显；纯延迟的收益受限于模型把
 FLOPs 花在哪里。详见[已知限制](#已知限制)。
 
+**这些数字是怎么测的。** 同一台机器、同一输入（参考用例）、双方均为 fp32：延迟取 6 轮
+预热后的**中位数**，内存取峰值 RSS，冷启动取「导入运行时 + 加载模型 + 首次出结果」——
+也就是用户跑命令行时真正要等的全部时间。依赖占用按 Apple 芯片上安装后的 `site-packages`
+体积统计——`torch` 对比 `mlx` + `mlx-lm`；两套方案都必须安装的 `transformers`、`numpy`、
+`safetensors` 相互抵消，不计入对比。
+
+冷启动包含从磁盘读取 2.4 GB 权重，因此在一台机器上**头一次**运行（文件还不在系统页缓存
+里）双方各自会慢约 1.5 秒，比值也随之收窄。上表用的是稳定可重复的那组数字。
+
 ## 安装
 
-需要 Apple 芯片 Mac（M1 及以上）与 Python ≥ 3.10。
+**需要 Apple 芯片 Mac（M1 及以上）、macOS 14（Sonoma）或更高版本**，以及 Python ≥ 3.10。
+MLX 只为 macOS 14 / 15 / 26 提供 wheel——macOS 13 及更早版本装不上，Intel Mac 完全无法运行。
 
 ```bash
 git clone https://github.com/mrg123/nanojev-mlx.git
@@ -66,7 +93,14 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-从 Hugging Face 取权重（约 2.4 GB）到 `checkpoints/NanoJev`：
+可选：把包本身也装上，会额外得到 `nanojev-mlx` 与 `nanojev-mlx-serve` 两个命令：
+
+```bash
+pip install -e .
+```
+
+从 Hugging Face 取权重（约 2.4 GB）到 `checkpoints/NanoJev`。`huggingface_hub` 已作为
+`transformers` 的依赖存在：
 
 ```python
 from huggingface_hub import snapshot_download
@@ -83,12 +117,30 @@ snapshot_download(
 
 ## 用法
 
-```bash
-# 命令行
-python -m nanojev_mlx.predict --checkpoint-dir checkpoints/NanoJev --input request.json
+[`examples/request.json`](examples/request.json) 是一个可直接运行的请求，两个 state、覆盖全部
+三种题型（choice / boolean / score），建议从这里开始：
 
+```bash
+python -m nanojev_mlx.predict --checkpoint-dir checkpoints/NanoJev --input examples/request.json
+```
+
+它打印完整的结果 JSON（每条候选的概率、实际生效的 temperature，以及标明设备与
+零解码步数的 `execution` 段）。把上面那次运行的答案按每题一行整理出来是：
+
+| State | 问题 | 题型 | 答案 |
+|---|---|---|---|
+| `refund` | `team` | choice | `billing` @ 1.0000 |
+| `refund` | `arrived` | boolean | `p_true` 0.0174 → `False` |
+| `refund` | `severity` | score | 1.464（4 档中的第 2 档） |
+| `button_error` | `team` | choice | `technical` @ 0.9847 |
+| `button_error` | `blocking` | boolean | `p_true` 0.2363 → `False` |
+
+```bash
 # 本地 HTTP 服务（与原版 POST /api/evaluate 协议兼容）
 python -m nanojev_mlx.serve --checkpoint-dir checkpoints/NanoJev --port 8765
+
+curl -X POST http://127.0.0.1:8765/api/evaluate \
+  -H 'Content-Type: application/json' --data-binary @examples/request.json
 ```
 
 ```python
@@ -106,6 +158,31 @@ result = run_prediction(model, {
 })
 # p_true = 0.0145899..., value = False
 ```
+
+## 测试
+
+分两层，按所需条件划分：
+
+| 套件 | 需要什么 | 能跑在哪 |
+|---|---|---|
+| `tests/test_contract.py` —— 请求校验与答案组装 | 只要 Python | 任何平台；不需要 MLX、GPU、权重 |
+| `tests/test_equivalence.py` —— 与 PyTorch 参考逐概率比对 | MLX + 2.4 GB checkpoint | Apple 芯片 |
+
+```bash
+# 只跑协议层 —— 不需要 MLX、GPU、权重。CI 跑的就是这一条
+python -m unittest discover -s tests -p "test_contract.py" -v
+
+# 全部，含数值等价性验证
+NANOJEV_CHECKPOINT=/path/to/checkpoints/NanoJev python -m unittest discover -s tests -v
+```
+
+共 **19 项测试**（15 项协议层 + 4 项等价性）。没有 checkpoint 时那 4 项会**跳过而不是失败**，
+所以刚克隆下来也能跑。
+
+CI 在 Linux 上覆盖协议层。等价性测试刻意不进 CI：MLX 在无头 / 无 GPU 环境中**导入即崩溃**
+（[ml-explore/mlx#3148](https://github.com/ml-explore/mlx/issues/3148)），而 GitHub 托管的
+macOS runner 不提供 Metal 设备。这也正是把输出路径中纯逻辑的那一半拆到
+`nanojev_mlx.answers`、不引入 MLX 的原因。
 
 ## 原理
 
@@ -140,7 +217,7 @@ token 右侧，纯因果掩码产生的 hidden state 与原实现「因果 + pad
 | backbone | HF `Qwen3Model`（PyTorch） | `mlx_lm` `Qwen3Model` |
 | 决策头 | `nn.MultiheadAttention` | MLX 显式注意力 + 加性掩码 |
 | 融合的 `in_proj_weight` | 保持融合 | 拆成 `q_proj` / `k_proj` / `v_proj` |
-| 设备门禁 | 硬性要求 CUDA | 走 MLX 的 Metal GPU |
+| 设备门禁 | 以 CUDA 为先；推理也可退回 PyTorch MPS | 走 MLX 的 Metal GPU，不依赖 PyTorch |
 
 `prepare_examples`（把状态、问题、候选集变成 token 路径的那段）是**逐行**移植的——
 只要差一个 token，下游所有概率都会变。
@@ -157,6 +234,35 @@ token 右侧，纯因果掩码产生的 hidden state 与原实现「因果 + pad
 - **不含权重。** 请按上面的方式从 Hugging Face 下载。
 - **仅 float32。** 上游是在 A100 上用 bf16 autocast 训练的。本移植跑 fp32，这是一条
   **不同**的数值路径——它更接近用于等价性验证的 CPU fp32 基准，而不是论文公布的指标。
+
+## 故障排查
+
+**`pip install` 找不到 `mlx`，或解析到非常旧的版本。**
+MLX 只为 Apple 芯片的 macOS 14 / 15 / 26 提供 wheel。macOS 13 及更早、或 Intel Mac 上没有
+wheel，本移植无法在这些环境运行。
+
+**`ValueError: checkpoint 缺少 best.safetensors`（或 `backbone_config`、`tokenizer`）。**
+`--checkpoint-dir` 必须指向**直接包含**这些条目的目录。在 Hugging Face 仓库上，这要么是仓库
+根目录，要么是 `variants/<name>/` 目录——两者布局完全相同：
+
+```
+best.safetensors
+config.json
+backbone_config/config.json
+tokenizer/{tokenizer.json, tokenizer_config.json, chat_template.jinja}
+```
+
+所以 `variants/local_atomic_seed17` 也能用，只要指向 variant 目录本身而不是它的上级。注意
+variant 是在不同数据（迷宫、Snake）上训练的，不会复现本 README 的数字——那组数字用的是根
+发布版。
+
+**导入时报 `OSError` / `NSRangeException`，或还没输出任何东西就崩溃。**
+MLX 需要 Metal GPU。这在无头虚拟机、CI 容器以及部分远程 / SSH 会话中会发生。这不是本移植
+能绕过的——请在正常的 macOS 桌面会话里运行。
+
+**16 GB 机器内存吃紧。**
+本移植峰值约 2.75 GB。同时再跑 PyTorch 版会再加约 4.9 GB，两者并行会让 16 GB 机器吃紧。
+本仓库其余部分都不占内存。
 
 ## 致谢与许可
 

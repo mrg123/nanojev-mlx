@@ -1,6 +1,9 @@
-"""协议层测试：请求校验与结果组装。不需要模型权重即可运行。
+"""协议层测试：请求校验与结果组装。
 
-    python -m unittest discover -s tests -v
+**不需要模型权重，也不需要 MLX**——因此可以在任何平台运行，包括没有 Metal GPU 的
+CI 容器。这正是 answers.py 与 predict.py 分开的原因。
+
+    python -m unittest discover -s tests -p "test_contract.py" -v
 """
 
 from __future__ import annotations
@@ -12,7 +15,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from nanojev_mlx.predict import answer_from_probabilities  # noqa: E402
+from nanojev_mlx.answers import answer_from_probabilities  # noqa: E402
 from nanojev_mlx.text import validate_request  # noqa: E402
 
 

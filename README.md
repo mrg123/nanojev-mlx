@@ -1,11 +1,18 @@
 # nanojev-mlx
 
+**English** | [简体中文](README.zh-CN.md)
+
+[![tests](https://github.com/mrg123/nanojev-mlx/actions/workflows/ci.yml/badge.svg)](https://github.com/mrg123/nanojev-mlx/actions/workflows/ci.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 **Apple Silicon native port of [NanoJev](https://github.com/TianyuCodings/NanoJev) — a 0.6B parallel decision model running on MLX.**
 States and questions in, complete probability distributions out, zero output-token decoding.
 
-NanoJev's original implementation hard-requires CUDA. This port keeps the model exactly as
-trained and reimplements the decision head in MLX, so it runs natively on the Metal GPU of
-any Apple Silicon Mac — no CUDA, no PyTorch, no cloud.
+NanoJev is CUDA-first: the recorded environment targets an A100 in bf16 and most research
+scripts are CUDA-gated. Its inference path does still run on Apple Silicon through PyTorch MPS
+— that is exactly the baseline measured below — but it drags in PyTorch and leaves memory and
+startup time on the table. This port keeps the model exactly as trained and reimplements the
+decision head in MLX, so the same weights run natively on the Metal GPU with no PyTorch at all.
 
 > Unofficial community port. Not affiliated with the NanoJev or TypeSafe authors.
 
@@ -46,10 +53,20 @@ Workload: the reference fixture — 2 states, 6 questions, 15 candidate paths, 1
 
 | Metric | PyTorch + MPS | **nanojev-mlx** | Change |
 |---|---:|---:|---:|
-| Steady-state latency | 470 ms | **352 ms** | **1.3× faster** |
+| Steady-state latency | 456 ms | **344 ms** | **1.3× faster** |
 | Peak resident memory | 4.91 GB | **2.75 GB** | **−44%** |
-| Cold start to first result | 9.9 s | **3.8 s** | **2.6× faster** |
-| Dependency weight | PyTorch (~2.5 GB) | MLX (~65 MB) | — |
+| Cold start to first result | 8.2 s | **2.2 s** | **3.8× faster** |
+| Runtime dependency footprint | PyTorch ~590 MB | **MLX ~210 MB** | **2.8× smaller** |
+
+Reproduce all of it on your own machine:
+
+```bash
+python benchmarks/benchmark.py --checkpoint-dir checkpoints/NanoJev \
+    --backend both --nanojev-repo ../NanoJev
+```
+
+`--backend both` measures each stack in its own subprocess so the memory readings stay clean.
+Omit `--nanojev-repo` and `--backend both` to measure only the MLX port.
 
 **Honest note on the speedup.** 1.3× is real but modest, and the reason is structural: this
 model runs the *full 28-layer backbone once per candidate path*, so the workload is
@@ -57,9 +74,22 @@ compute-bound on the backbone, not on the 200 K-parameter head this port rewrote
 clearly on memory and startup; the raw latency gain is limited by how the model spends its
 FLOPs. See [Limitations](#limitations).
 
+**How these numbers were taken.** One machine, one input (the reference fixture), fp32 on both
+sides: latency is the median of 6 warm rounds, memory is peak RSS, cold start is runtime import
+plus model load plus first result — everything a user waits for when running the CLI. Dependency
+footprint is the installed `site-packages` size on Apple Silicon — `torch` versus `mlx` +
+`mlx-lm`. Both stacks additionally need `transformers`, `numpy`, and `safetensors`, so that
+shared cost cancels out of the comparison.
+
+Cold start includes reading the 2.4 GB weight file, so the very first run on a machine (with
+the file not yet in the OS page cache) is roughly 1.5 s slower for each stack and the ratio
+narrows accordingly. The values above are the stable, repeatable ones.
+
 ## Install
 
-Requires an Apple Silicon Mac (M1 or newer) and Python ≥ 3.10.
+**Requires an Apple Silicon Mac (M1 or newer) running macOS 14 (Sonoma) or later**, and
+Python ≥ 3.10. MLX ships wheels for macOS 14, 15 and 26 — macOS 13 and older are not supported,
+and an Intel Mac cannot run it at all.
 
 ```bash
 git clone https://github.com/mrg123/nanojev-mlx.git
@@ -68,7 +98,15 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Get the model weights (~2.4 GB) from Hugging Face into `checkpoints/NanoJev`:
+Optionally install the package itself, which also gives you the `nanojev-mlx` and
+`nanojev-mlx-serve` console commands:
+
+```bash
+pip install -e .
+```
+
+Get the model weights (~2.4 GB) from Hugging Face into `checkpoints/NanoJev`.
+`huggingface_hub` is already available as a dependency of `transformers`:
 
 ```python
 from huggingface_hub import snapshot_download
@@ -85,13 +123,26 @@ mapped at load time, so there is no duplicate copy of the weights in a second fo
 
 ## Usage
 
-### Command line
+[`examples/request.json`](examples/request.json) is a ready-to-run request covering all three
+question types (choice, boolean, score) across two states. Start with it:
 
 ```bash
 python -m nanojev_mlx.predict \
   --checkpoint-dir checkpoints/NanoJev \
-  --input request.json
+  --input examples/request.json
 ```
+
+It prints the full result JSON — every candidate's probability, the temperature actually
+applied, and an `execution` block reporting the device and that zero decode steps ran.
+Summarized to one line per question, the answers for that request are:
+
+| State | Question | Type | Answer |
+|---|---|---|---|
+| `refund` | `team` | choice | `billing` @ 1.0000 |
+| `refund` | `arrived` | boolean | `p_true` 0.0174 → `False` |
+| `refund` | `severity` | score | 1.464 (level 1 of 4) |
+| `button_error` | `team` | choice | `technical` @ 0.9847 |
+| `button_error` | `blocking` | boolean | `p_true` 0.2363 → `False` |
 
 ### Python
 
@@ -128,8 +179,34 @@ python -m nanojev_mlx.serve --checkpoint-dir checkpoints/NanoJev --port 8765
 ```bash
 curl -X POST http://127.0.0.1:8765/api/evaluate \
   -H 'Content-Type: application/json' \
-  --data-binary @request.json
+  --data-binary @examples/request.json
 ```
+
+## Testing
+
+Two layers, split by what they need:
+
+| Suite | Needs | Runs on |
+|---|---|---|
+| `tests/test_contract.py` — request validation, answer assembly | Python only | any platform; no MLX, no GPU, no weights |
+| `tests/test_equivalence.py` — probabilities vs the PyTorch reference | MLX + a 2.4 GB checkpoint | Apple Silicon |
+
+```bash
+# Protocol layer only — no MLX, no GPU, no weights. This is what CI runs.
+python -m unittest discover -s tests -p "test_contract.py" -v
+
+# Everything, including the numerical equivalence check
+NANOJEV_CHECKPOINT=/path/to/checkpoints/NanoJev python -m unittest discover -s tests -v
+```
+
+**19 tests** in total (15 protocol + 4 equivalence). With no checkpoint present the four
+equivalence tests skip rather than fail, so the suite is still useful on a bare checkout.
+
+CI covers the protocol layer on Linux. The equivalence tests deliberately do not run there:
+MLX crashes on import in headless, GPU-less environments
+([ml-explore/mlx#3148](https://github.com/ml-explore/mlx/issues/3148)), and GitHub's hosted
+macOS runners expose no Metal device. That is why `nanojev_mlx.answers` — the pure-logic half
+of the output path — lives in its own module with no MLX import.
 
 ## How it works
 
@@ -166,7 +243,7 @@ semantics are untouched. Concretely:
 | Backbone | HF `Qwen3Model` (PyTorch) | `mlx_lm` `Qwen3Model` |
 | Decision head | `nn.MultiheadAttention` | explicit MLX attention with additive mask |
 | Fused `in_proj_weight` | kept fused | split into `q_proj` / `k_proj` / `v_proj` |
-| Device gate | hard CUDA requirement | Metal GPU via MLX |
+| Device gate | CUDA-first; inference can also fall back to PyTorch MPS | Metal GPU via MLX, no PyTorch |
 
 `prepare_examples` — the code that turns a state, question, and candidate set into token
 paths — is a line-by-line port, because a single differing token would change every
@@ -186,6 +263,38 @@ probability downstream.
 - **float32 only.** Upstream trained with bf16 autocast on A100. This port runs fp32, which is
   a *different* numerical path from the original's bf16 — closer to the CPU fp32 reference used
   for the equivalence tests than to the published benchmark figures.
+
+## Troubleshooting
+
+**`pip install` cannot find `mlx` / resolves to a very old version.**
+MLX ships wheels for macOS 14, 15 and 26 on Apple Silicon only. On macOS 13 or older, or on an
+Intel Mac, there is no wheel — this port cannot run there.
+
+**`ValueError: checkpoint 缺少 best.safetensors` (or `backbone_config`, `tokenizer`).**
+`--checkpoint-dir` must point at the directory that directly contains those entries. On the
+Hugging Face repo that is either the repository root or one of the `variants/<name>/`
+directories — both have the same layout:
+
+```
+best.safetensors
+config.json
+backbone_config/config.json
+tokenizer/{tokenizer.json, tokenizer_config.json, chat_template.jinja}
+```
+
+So `variants/local_atomic_seed17` works too, as long as you point at the variant directory
+itself and not at its parent. Be aware that variants are trained on different data (maze,
+Snake) and will not reproduce the numbers in this README, which use the root release.
+
+**`OSError` / `NSRangeException` on import, or a crash before any output.**
+MLX needs a Metal GPU. This happens in headless virtual machines, CI containers, and some
+remote/SSH sessions. It is not something this port can work around — run it on a normal macOS
+desktop session.
+
+**Out of memory on a 16 GB machine.**
+This port peaks at ~2.75 GB. Running the PyTorch implementation at the same time adds ~4.9 GB,
+so the two together will pressure a 16 GB machine. Nothing else in this repository is
+memory-hungry.
 
 ## Credits and license
 

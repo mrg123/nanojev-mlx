@@ -12,28 +12,13 @@ from pathlib import Path
 import mlx.core as mx
 import numpy as np
 
+from .answers import answer_from_probabilities
 from .model import load_model
 from .text import prepare_examples, read_json, validate_request
 
 SCHEMA_VERSION = "nanojev-mlx-inference-v1"
 
-
-def answer_from_probabilities(example, probabilities):
-    ids = example["candidate_ids"]
-    if len(probabilities) != len(ids) or not all(math.isfinite(p) and 0 <= p <= 1 for p in probabilities):
-        raise ValueError("模型产生了无效概率")
-    if abs(math.fsum(probabilities) - 1.0) > 1e-5:
-        raise ValueError("模型概率总和不为1")
-    best = max(range(len(ids)), key=probabilities.__getitem__)
-    result = {"type": example["type"], "probabilities": dict(zip(ids, probabilities))}
-    if example["type"] == "boolean":
-        result.update(p_true=probabilities[1], value=bool(best))
-    elif example["type"] == "choice":
-        result.update(choice=ids[best], value=ids[best])
-    else:
-        score = math.fsum(i * p for i, p in enumerate(probabilities))
-        result.update(score=score, level=best, value=score)
-    return result
+__all__ = ["answer_from_probabilities", "run_prediction", "main", "SCHEMA_VERSION"]
 
 
 def run_prediction(model, payload, temperature: float = 1.0, batch_questions: int = 0):

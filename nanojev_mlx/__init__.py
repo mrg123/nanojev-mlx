@@ -22,15 +22,16 @@ _EXPORTS = {
     "load_tokenizer": "model",
     "map_weights": "model",
     "run_prediction": "predict",
-    "answer_from_probabilities": "predict",
+    "answer_from_probabilities": "answers",
     "prepare_examples": "text",
     "validate_request": "text",
 }
 
 if TYPE_CHECKING:  # pragma: no cover
+    from .answers import answer_from_probabilities
     from .head import DecisionHead, HeadConfig
     from .model import DecisionModel, load_model, load_tokenizer, map_weights
-    from .predict import answer_from_probabilities, run_prediction
+    from .predict import run_prediction
     from .text import prepare_examples, validate_request
 
 __all__ = sorted(_EXPORTS) + ["__version__"]

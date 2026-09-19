@@ -1,0 +1,52 @@
+{
+  "states": [
+    {
+      "id": "refund",
+      "state": "客户反映同一订单被扣款两次。退款已经批准，但款项尚未到账。服务可以正常使用。",
+      "questions": {
+        "team": {
+          "type": "choice",
+          "instructions": "根据客户提出的主要问题，选择负责的支持团队。",
+          "criteria": {
+            "account": "账户密码和身份验证问题",
+            "billing": "扣费、付款与退款问题",
+            "technical": "软件功能错误和服务中断"
+          }
+        },
+        "arrived": {
+          "type": "boolean",
+          "instructions": "退款是否已经实际到账？审批通过不算完成付款。"
+        },
+        "severity": {
+          "type": "score",
+          "instructions": "只根据明确描述的使用影响，评估严重程度。",
+          "criteria": [
+            "服务完全不可用",
+            "核心功能受阻但有替代方式",
+            "仅轻微不便",
+            "没有任何影响"
+          ]
+        }
+      }
+    },
+    {
+      "id": "button_error",
+      "state": "点击导出按钮后弹出错误提示，页面其余功能正常，数据没有丢失。",
+      "questions": {
+        "team": {
+          "type": "choice",
+          "instructions": "根据客户提出的主要问题，选择负责的支持团队。",
+          "criteria": {
+            "account": "账户密码和身份验证问题",
+            "billing": "扣费、付款与退款问题",
+            "technical": "软件功能错误和服务中断"
+          }
+        },
+        "blocking": {
+          "type": "boolean",
+          "instructions": "这个问题是否让客户无法完成其核心任务？"
+        }
+      }
+    }
+  ]
+}
