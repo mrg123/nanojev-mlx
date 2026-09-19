@@ -1,0 +1,2 @@
+# nanojev-mlx
+mac run
