@@ -41,4 +41,12 @@ jobs:
         run: pip install --no-deps -e .
 
       - name: 测试
-        run: python -m unittest discover -s tests -v
+        run: |
+          python -m unittest discover -s tests -v 2>&1 | tee "$RUNNER_TEMP/test-output.txt"
+          # 零测试被收集时 Python 3.10 依然返回 0（退出码 5 是 3.12 才引入的，
+          # 见 python/cpython#102051），所以这里显式兜底，避免测试被改名或移走后
+          # 这条腿静默变绿。只要确实收集到了测试，这个分支就不会触发。
+          if grep -qE "^Ran 0 tests" "$RUNNER_TEMP/test-output.txt"; then
+            echo "::error::没有收集到任何测试；检查 tests/ 是否被改名或移走"
+            exit 1
+          fi
