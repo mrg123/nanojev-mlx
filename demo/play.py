@@ -24,6 +24,19 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from demo.controller import MlxEngine, run_episode  # noqa: E402
 
 
+def display_checkpoint(resolved: Path) -> str:
+    """A shareable name for the checkpoint, not an absolute path.
+
+    The generated page is meant to be opened, kept, and sometimes shared, so it should
+    not bake in whoever ran it's directory layout.
+    """
+    root = Path(__file__).resolve().parent.parent
+    try:
+        return str(resolved.relative_to(root))
+    except ValueError:
+        return f"{resolved.parent.name}/{resolved.name}"
+
+
 def build_page(episode: dict, checkpoint: str) -> str:
     payload = json.dumps(episode, ensure_ascii=False, separators=(",", ":"))
     title = f"nanojev-mlx · Snake · seed {episode['seed']} · {episode['size']}×{episode['size']}"
@@ -249,7 +262,7 @@ def main():
     elapsed = time.perf_counter() - started
 
     out = Path(args.output).expanduser()
-    out.write_text(build_page(episode, str(checkpoint)), encoding="utf-8")
+    out.write_text(build_page(episode, display_checkpoint(checkpoint)), encoding="utf-8")
 
     print(
         f"  完成: {episode['survival_steps']} 步, 吃到 {episode['food_collected']} 个食物, "

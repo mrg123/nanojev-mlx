@@ -1,0 +1,345 @@
+{
+  "schema_version": "pytorch-reference-games-v1",
+  "source": "NanoJev scripts/predict_toy_decisions.py (MPS fp32) on variants/games_gold_seed17",
+  "checkpoint": "variants/games_gold_seed17",
+  "requests": [
+    {
+      "id": "snake:0:step:0",
+      "state": "Snake on a 12x12 board. Coordinates are zero-based (row,column); north decreases row and east increases column. Body in head-first order: [[6,6],[6,5],[6,4]]. Direction: east. Food: [3, 7]. Reverse moves are disallowed. A move onto food grows the body; otherwise the tail vacates. Entering that vacated tail cell is allowed. Walls and occupied body cells cause collision.",
+      "questions": {
+        "action": {
+          "type": "choice",
+          "instructions": "Choose the offered move that best preserves space for subsequent movement while collecting the currently visible food. A common code planner has selected the offered candidates. Use only the current physical state; tied moves are equivalent.",
+          "criteria": {
+            "north": "Move north to [5, 6].",
+            "east": "Move east to [6, 7]."
+          }
+        }
+      }
+    },
+    {
+      "id": "snake:0:step:1",
+      "state": "Snake on a 12x12 board. Coordinates are zero-based (row,column); north decreases row and east increases column. Body in head-first order: [[5,6],[6,6],[6,5]]. Direction: north. Food: [3, 7]. Reverse moves are disallowed. A move onto food grows the body; otherwise the tail vacates. Entering that vacated tail cell is allowed. Walls and occupied body cells cause collision.",
+      "questions": {
+        "action": {
+          "type": "choice",
+          "instructions": "Choose the offered move that best preserves space for subsequent movement while collecting the currently visible food. A common code planner has selected the offered candidates. Use only the current physical state; tied moves are equivalent.",
+          "criteria": {
+            "north": "Move north to [4, 6].",
+            "east": "Move east to [5, 7]."
+          }
+        }
+      }
+    },
+    {
+      "id": "snake:0:step:2",
+      "state": "Snake on a 12x12 board. Coordinates are zero-based (row,column); north decreases row and east increases column. Body in head-first order: [[4,6],[5,6],[6,6]]. Direction: north. Food: [3, 7]. Reverse moves are disallowed. A move onto food grows the body; otherwise the tail vacates. Entering that vacated tail cell is allowed. Walls and occupied body cells cause collision.",
+      "questions": {
+        "action": {
+          "type": "choice",
+          "instructions": "Choose the offered move that best preserves space for subsequent movement while collecting the currently visible food. A common code planner has selected the offered candidates. Use only the current physical state; tied moves are equivalent.",
+          "criteria": {
+            "north": "Move north to [3, 6].",
+            "east": "Move east to [4, 7]."
+          }
+        }
+      }
+    },
+    {
+      "id": "snake:0:step:5",
+      "state": "Snake on a 12x12 board. Coordinates are zero-based (row,column); north decreases row and east increases column. Body in head-first order: [[4,7],[3,7],[3,6],[4,6]]. Direction: south. Food: [10, 4]. Reverse moves are disallowed. A move onto food grows the body; otherwise the tail vacates. Entering that vacated tail cell is allowed. Walls and occupied body cells cause collision.",
+      "questions": {
+        "action": {
+          "type": "choice",
+          "instructions": "Choose the offered move that best preserves space for subsequent movement while collecting the currently visible food. A common code planner has selected the offered candidates. Use only the current physical state; tied moves are equivalent.",
+          "criteria": {
+            "south": "Move south to [5, 7].",
+            "west": "Move west to [4, 6]."
+          }
+        }
+      }
+    },
+    {
+      "id": "snake:0:step:6",
+      "state": "Snake on a 12x12 board. Coordinates are zero-based (row,column); north decreases row and east increases column. Body in head-first order: [[5,7],[4,7],[3,7],[3,6]]. Direction: south. Food: [10, 4]. Reverse moves are disallowed. A move onto food grows the body; otherwise the tail vacates. Entering that vacated tail cell is allowed. Walls and occupied body cells cause collision.",
+      "questions": {
+        "action": {
+          "type": "choice",
+          "instructions": "Choose the offered move that best preserves space for subsequent movement while collecting the currently visible food. A common code planner has selected the offered candidates. Use only the current physical state; tied moves are equivalent.",
+          "criteria": {
+            "south": "Move south to [6, 7].",
+            "west": "Move west to [5, 6]."
+          }
+        }
+      }
+    },
+    {
+      "id": "snake:0:step:7",
+      "state": "Snake on a 12x12 board. Coordinates are zero-based (row,column); north decreases row and east increases column. Body in head-first order: [[6,7],[5,7],[4,7],[3,7]]. Direction: south. Food: [10, 4]. Reverse moves are disallowed. A move onto food grows the body; otherwise the tail vacates. Entering that vacated tail cell is allowed. Walls and occupied body cells cause collision.",
+      "questions": {
+        "action": {
+          "type": "choice",
+          "instructions": "Choose the offered move that best preserves space for subsequent movement while collecting the currently visible food. A common code planner has selected the offered candidates. Use only the current physical state; tied moves are equivalent.",
+          "criteria": {
+            "south": "Move south to [7, 7].",
+            "west": "Move west to [6, 6]."
+          }
+        }
+      }
+    },
+    {
+      "id": "snake:0:step:8",
+      "state": "Snake on a 12x12 board. Coordinates are zero-based (row,column); north decreases row and east increases column. Body in head-first order: [[7,7],[6,7],[5,7],[4,7]]. Direction: south. Food: [10, 4]. Reverse moves are disallowed. A move onto food grows the body; otherwise the tail vacates. Entering that vacated tail cell is allowed. Walls and occupied body cells cause collision.",
+      "questions": {
+        "action": {
+          "type": "choice",
+          "instructions": "Choose the offered move that best preserves space for subsequent movement while collecting the currently visible food. A common code planner has selected the offered candidates. Use only the current physical state; tied moves are equivalent.",
+          "criteria": {
+            "south": "Move south to [8, 7].",
+            "west": "Move west to [7, 6]."
+          }
+        }
+      }
+    },
+    {
+      "id": "snake:0:step:9",
+      "state": "Snake on a 12x12 board. Coordinates are zero-based (row,column); north decreases row and east increases column. Body in head-first order: [[8,7],[7,7],[6,7],[5,7]]. Direction: south. Food: [10, 4]. Reverse moves are disallowed. A move onto food grows the body; otherwise the tail vacates. Entering that vacated tail cell is allowed. Walls and occupied body cells cause collision.",
+      "questions": {
+        "action": {
+          "type": "choice",
+          "instructions": "Choose the offered move that best preserves space for subsequent movement while collecting the currently visible food. A common code planner has selected the offered candidates. Use only the current physical state; tied moves are equivalent.",
+          "criteria": {
+            "south": "Move south to [9, 7].",
+            "west": "Move west to [8, 6]."
+          }
+        }
+      }
+    },
+    {
+      "id": "snake:0:step:10",
+      "state": "Snake on a 12x12 board. Coordinates are zero-based (row,column); north decreases row and east increases column. Body in head-first order: [[9,7],[8,7],[7,7],[6,7]]. Direction: south. Food: [10, 4]. Reverse moves are disallowed. A move onto food grows the body; otherwise the tail vacates. Entering that vacated tail cell is allowed. Walls and occupied body cells cause collision.",
+      "questions": {
+        "action": {
+          "type": "choice",
+          "instructions": "Choose the offered move that best preserves space for subsequent movement while collecting the currently visible food. A common code planner has selected the offered candidates. Use only the current physical state; tied moves are equivalent.",
+          "criteria": {
+            "south": "Move south to [10, 7].",
+            "west": "Move west to [9, 6]."
+          }
+        }
+      }
+    },
+    {
+      "id": "snake:0:step:14",
+      "state": "Snake on a 12x12 board. Coordinates are zero-based (row,column); north decreases row and east increases column. Body in head-first order: [[10,4],[10,5],[10,6],[10,7],[9,7]]. Direction: west. Food: [0, 3]. Reverse moves are disallowed. A move onto food grows the body; otherwise the tail vacates. Entering that vacated tail cell is allowed. Walls and occupied body cells cause collision.",
+      "questions": {
+        "action": {
+          "type": "choice",
+          "instructions": "Choose the offered move that best preserves space for subsequent movement while collecting the currently visible food. A common code planner has selected the offered candidates. Use only the current physical state; tied moves are equivalent.",
+          "criteria": {
+            "north": "Move north to [9, 4].",
+            "west": "Move west to [10, 3]."
+          }
+        }
+      }
+    },
+    {
+      "id": "snake:0:step:15",
+      "state": "Snake on a 12x12 board. Coordinates are zero-based (row,column); north decreases row and east increases column. Body in head-first order: [[9,4],[10,4],[10,5],[10,6],[10,7]]. Direction: north. Food: [0, 3]. Reverse moves are disallowed. A move onto food grows the body; otherwise the tail vacates. Entering that vacated tail cell is allowed. Walls and occupied body cells cause collision.",
+      "questions": {
+        "action": {
+          "type": "choice",
+          "instructions": "Choose the offered move that best preserves space for subsequent movement while collecting the currently visible food. A common code planner has selected the offered candidates. Use only the current physical state; tied moves are equivalent.",
+          "criteria": {
+            "north": "Move north to [8, 4].",
+            "west": "Move west to [9, 3]."
+          }
+        }
+      }
+    },
+    {
+      "id": "snake:0:step:16",
+      "state": "Snake on a 12x12 board. Coordinates are zero-based (row,column); north decreases row and east increases column. Body in head-first order: [[8,4],[9,4],[10,4],[10,5],[10,6]]. Direction: north. Food: [0, 3]. Reverse moves are disallowed. A move onto food grows the body; otherwise the tail vacates. Entering that vacated tail cell is allowed. Walls and occupied body cells cause collision.",
+      "questions": {
+        "action": {
+          "type": "choice",
+          "instructions": "Choose the offered move that best preserves space for subsequent movement while collecting the currently visible food. A common code planner has selected the offered candidates. Use only the current physical state; tied moves are equivalent.",
+          "criteria": {
+            "north": "Move north to [7, 4].",
+            "west": "Move west to [8, 3]."
+          }
+        }
+      }
+    }
+  ],
+  "states": [
+    {
+      "id": "snake:0:step:0",
+      "answers": {
+        "action": {
+          "type": "choice",
+          "probabilities": {
+            "north": 0.5377001166343689,
+            "east": 0.4622998833656311
+          },
+          "choice": "north",
+          "value": "north"
+        }
+      }
+    },
+    {
+      "id": "snake:0:step:1",
+      "answers": {
+        "action": {
+          "type": "choice",
+          "probabilities": {
+            "north": 0.4671608507633209,
+            "east": 0.5328391790390015
+          },
+          "choice": "east",
+          "value": "east"
+        }
+      }
+    },
+    {
+      "id": "snake:0:step:2",
+      "answers": {
+        "action": {
+          "type": "choice",
+          "probabilities": {
+            "north": 0.8434306979179382,
+            "east": 0.15656930208206177
+          },
+          "choice": "north",
+          "value": "north"
+        }
+      }
+    },
+    {
+      "id": "snake:0:step:5",
+      "answers": {
+        "action": {
+          "type": "choice",
+          "probabilities": {
+            "south": 0.48778077960014343,
+            "west": 0.5122191309928894
+          },
+          "choice": "west",
+          "value": "west"
+        }
+      }
+    },
+    {
+      "id": "snake:0:step:6",
+      "answers": {
+        "action": {
+          "type": "choice",
+          "probabilities": {
+            "south": 0.4400351643562317,
+            "west": 0.5599648952484131
+          },
+          "choice": "west",
+          "value": "west"
+        }
+      }
+    },
+    {
+      "id": "snake:0:step:7",
+      "answers": {
+        "action": {
+          "type": "choice",
+          "probabilities": {
+            "south": 0.4213714301586151,
+            "west": 0.5786285400390625
+          },
+          "choice": "west",
+          "value": "west"
+        }
+      }
+    },
+    {
+      "id": "snake:0:step:8",
+      "answers": {
+        "action": {
+          "type": "choice",
+          "probabilities": {
+            "south": 0.6151884198188782,
+            "west": 0.384811669588089
+          },
+          "choice": "south",
+          "value": "south"
+        }
+      }
+    },
+    {
+      "id": "snake:0:step:9",
+      "answers": {
+        "action": {
+          "type": "choice",
+          "probabilities": {
+            "south": 0.627448558807373,
+            "west": 0.37255144119262695
+          },
+          "choice": "south",
+          "value": "south"
+        }
+      }
+    },
+    {
+      "id": "snake:0:step:10",
+      "answers": {
+        "action": {
+          "type": "choice",
+          "probabilities": {
+            "south": 0.6715515851974487,
+            "west": 0.32844844460487366
+          },
+          "choice": "south",
+          "value": "south"
+        }
+      }
+    },
+    {
+      "id": "snake:0:step:14",
+      "answers": {
+        "action": {
+          "type": "choice",
+          "probabilities": {
+            "north": 0.026211239397525787,
+            "west": 0.9737887978553772
+          },
+          "choice": "west",
+          "value": "west"
+        }
+      }
+    },
+    {
+      "id": "snake:0:step:15",
+      "answers": {
+        "action": {
+          "type": "choice",
+          "probabilities": {
+            "north": 0.147379532456398,
+            "west": 0.8526204824447632
+          },
+          "choice": "west",
+          "value": "west"
+        }
+      }
+    },
+    {
+      "id": "snake:0:step:16",
+      "answers": {
+        "action": {
+          "type": "choice",
+          "probabilities": {
+            "north": 0.17979244887828827,
+            "west": 0.8202075362205505
+          },
+          "choice": "west",
+          "value": "west"
+        }
+      }
+    }
+  ]
+}

@@ -31,7 +31,8 @@ be the same model. `tests/reference/expected_pytorch.json` is the golden output 
 | Max probability deviation vs PyTorch (fp32) | **1.6e-07** |
 | Backbone last-hidden-state max abs error | 1.0e-04 (on values up to 67.6) |
 | Probability distributions normalized | all pass |
-| Test suite | **36 tests, all passing** (4 of them skip without weights) |
+| Test suite | **40 tests, all passing** (8 need MLX + weights and skip otherwise) |
+| Snake decision parity on the game checkpoint | **1.5e-06** max deviation, argmax 12/12 |
 
 Semantics match on every question in the reference fixture:
 
@@ -201,8 +202,9 @@ python -m unittest discover -s tests -p "test_contract.py" -v
 NANOJEV_CHECKPOINT=/path/to/checkpoints/NanoJev python -m unittest discover -s tests -v
 ```
 
-**36 tests** in total: 15 protocol, 17 demo, 4 equivalence. With no checkpoint present the
-four equivalence tests skip rather than fail, so a bare checkout still runs **32 of them**.
+**40 tests** in total: 15 protocol, 17 demo, 8 equivalence (4 against the root fixture, 4 against
+real Snake decision points). The 8 equivalence tests need MLX plus a 2.4 GB checkpoint and skip
+rather than fail, so a bare checkout still runs **32 of them**.
 
 CI covers the protocol layer on Linux. The equivalence tests deliberately do not run there:
 MLX crashes on import in headless, GPU-less environments

@@ -28,7 +28,8 @@
 | 与 PyTorch（fp32）最大概率偏差 | **1.6e-07** |
 | backbone 末层 hidden state 最大绝对误差 | 1.0e-04（数值量级达 67.6） |
 | 概率分布归一化 | 全部通过 |
-| 测试套件 | **36 项全部通过**（其中 4 项无权重时跳过） |
+| 测试套件 | **40 项全部通过**（其中 8 项需 MLX + 权重，缺失时跳过） |
+| 游戏权重下的贪吃蛇决策一致性 | 最大偏差 **1.5e-06**，argmax 12/12 一致 |
 
 语义在基准用例上全部一致：
 
@@ -176,8 +177,8 @@ python -m unittest discover -s tests -p "test_contract.py" -v
 NANOJEV_CHECKPOINT=/path/to/checkpoints/NanoJev python -m unittest discover -s tests -v
 ```
 
-共 **36 项测试**：15 项协议层、17 项 demo、4 项等价性。没有 checkpoint 时那 4 项会**跳过而不是
-失败**，所以刚克隆下来也能跑其中的 **32 项**。
+共 **40 项测试**：15 项协议层、17 项 demo、8 项等价性（4 项对根用例，4 项对真实贪吃蛇决策点）。
+那 8 项需要 MLX 加 2.4 GB 权重，缺失时**跳过而不是失败**，所以刚克隆下来也能跑其中的 **32 项**。
 
 CI 在 Linux 上覆盖协议层。等价性测试刻意不进 CI：MLX 在无头 / 无 GPU 环境中**导入即崩溃**
 （[ml-explore/mlx#3148](https://github.com/ml-explore/mlx/issues/3148)），而 GitHub 托管的

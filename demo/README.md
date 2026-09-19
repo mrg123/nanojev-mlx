@@ -19,6 +19,28 @@ The demo page shows the thing a token-stream model structurally cannot show you:
 every single step, the full probability the model put on **each** offered move, side
 by side, before it commits to one.
 
+## Verified against the published result
+
+The original repository publishes its Snake run as **27 food, 256 steps, alive at
+horizon**, with *seed 61005, controller greedy*. Running this port with those exact
+parameters reproduces it number for number:
+
+| | Upstream README | This port |
+|---|---|---|
+| Food collected | **27** | **27** |
+| Steps | **256** | **256** |
+| Outcome | Alive at horizon | `horizon_survived` |
+
+That was 75 model decisions and 181 code-forced moves, at ~57 ms per step (14.6 s total).
+
+Decision parity is checked separately: on 12 real Snake decision points, MLX and the
+original PyTorch implementation agree to **1.5e-06** with identical argmax on all 12
+(`tests/test_snake_equivalence.py`).
+
+A useful contrast — the same demo on the **root** checkpoint, which was never trained on
+Snake, splits its two-way decisions at 0.503 / 0.497. The game checkpoint is confident
+(0.760 / 0.240 on the opening move). That gap is the model actually knowing something.
+
 ## What you need
 
 The Snake checkpoint — **not** the root release:

@@ -37,7 +37,25 @@ def find_checkpoint() -> Path | None:
 CHECKPOINT = find_checkpoint()
 
 
+def mlx_available() -> bool:
+    """This suite needs MLX as well as the checkpoint; skip cleanly if either is absent.
+
+    Without this, a machine that has the weights but no working MLX would report a
+    confusing ImportError instead of a skip.
+    """
+    try:
+        import mlx.core  # noqa: F401
+
+        return True
+    except Exception:
+        return False
+
+
+HAS_MLX = mlx_available()
+
+
 @unittest.skipIf(CHECKPOINT is None, "未找到 checkpoint（设置 NANOJEV_CHECKPOINT 后启用）")
+@unittest.skipIf(not HAS_MLX, "MLX 不可用（仅 Apple 芯片支持）")
 class EquivalenceTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
