@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>nanojev-mlx · 新手入门指南 / Beginner's Guide</title>
+<style>
+  :root{
+    --bg:#fbfbfd; --fg:#1d1d1f; --muted:#6e6e73; --line:#e4e4e8;
+    --card:#ffffff; --code:#f5f5f7; --accent:#0a6cff; --accent-bg:#eef5ff;
+    --ok:#1a7f37; --ok-bg:#eaf7ee; --warn:#9a6700; --warn-bg:#fff8e6;
+    --shadow:0 1px 3px rgba(0,0,0,.06),0 8px 24px rgba(0,0,0,.04);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0e0e11; --fg:#ececf1; --muted:#9a9aa3; --line:#2a2a31;
+      --card:#17171c; --code:#1e1e24; --accent:#4d9bff; --accent-bg:#132234;
+      --ok:#5dd07e; --ok-bg:#122a1a; --warn:#e0b64a; --warn-bg:#2a2412;
+      --shadow:0 1px 3px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.3);
+    }
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth; scroll-padding-top:72px}
+  body{
+    margin:0; background:var(--bg); color:var(--fg);
+    font:16px/1.7 -apple-system,BlinkMacSystemFont,"SF Pro SC","PingFang SC",
+         "Helvetica Neue","Microsoft YaHei",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  code,kbd,pre,.mono{
+    font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    font-size:.9em;
+  }
+  .wrap{max-width:920px; margin:0 auto; padding:0 20px}
+
+  /* ---------- header ---------- */
+  header{
+    border-bottom:1px solid var(--line); background:var(--card);
+    position:sticky; top:0; z-index:50;
+  }
+  .bar{display:flex; align-items:center; gap:14px; height:60px}
+  .brand{font-weight:650; letter-spacing:-.01em; font-size:1.05rem}
+  .brand span{color:var(--muted); font-weight:400}
+  .spacer{flex:1}
+  .toggle{display:flex; border:1px solid var(--line); border-radius:9px; overflow:hidden}
+  .toggle button{
+    border:0; background:transparent; color:var(--muted); cursor:pointer;
+    padding:5px 12px; font:inherit; font-size:.82rem; line-height:1.5;
+  }
+  .toggle button[aria-pressed="true"]{background:var(--accent); color:#fff}
+
+  /* ---------- lang switch ---------- */
+  html[data-lang="zh"] .en{display:none !important}
+  html[data-lang="en"] .zh{display:none !important}
+
+  /* ---------- hero ---------- */
+  .hero{padding:52px 0 34px}
+  .hero h1{margin:0 0 14px; font-size:2rem; line-height:1.25; letter-spacing:-.02em}
+  .hero p.lead{margin:0 0 20px; font-size:1.12rem; color:var(--fg)}
+  .pill{
+    display:inline-block; background:var(--accent-bg); color:var(--accent);
+    border-radius:999px; padding:4px 13px; font-size:.78rem; font-weight:600;
+    letter-spacing:.01em; margin-bottom:16px;
+  }
+
+  /* ---------- sections ---------- */
+  section{padding:30px 0; border-top:1px solid var(--line)}
+  h2{
+    font-size:1.35rem; margin:0 0 16px; letter-spacing:-.01em;
+    display:flex; align-items:baseline; gap:10px;
+  }
+  h2 .num{
+    font-size:.78rem; color:var(--accent); background:var(--accent-bg);
+    border-radius:6px; padding:2px 8px; font-weight:650; flex:none;
+  }
+  h3{font-size:1.02rem; margin:26px 0 10px; letter-spacing:-.005em}
+  p{margin:0 0 14px}
+  ul,ol{margin:0 0 14px; padding-left:22px}
+  li{margin:6px 0}
+  a{color:var(--accent); text-decoration:none}
+  a:hover{text-decoration:underline}
+  strong{font-weight:650}
+
+  /* ---------- cards ---------- */
+  .grid{display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); margin:0 0 16px}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:12px;
+    padding:16px 18px; box-shadow:var(--shadow);
+  }
+  .card h4{margin:0 0 6px; font-size:.92rem}
+  .card p{margin:0; color:var(--muted); font-size:.9rem; line-height:1.6}
+
+  /* ---------- code ---------- */
+  pre{
+    background:var(--code); border:1px solid var(--line); border-radius:10px;
+    padding:14px 16px; overflow-x:auto; margin:0 0 16px; line-height:1.6;
+  }
+  pre code{background:none; padding:0; font-size:.86rem}
+  p code,li code,td code{
+    background:var(--code); border:1px solid var(--line);
+    border-radius:5px; padding:1px 5px;
+  }
+
+  /* ---------- tables ---------- */
+  .scroll{overflow-x:auto; margin:0 0 16px}
+  table{border-collapse:collapse; width:100%; font-size:.9rem; min-width:440px}
+  th,td{border-bottom:1px solid var(--line); padding:9px 12px; text-align:left; vertical-align:top}
+  th{font-weight:650; color:var(--muted); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em}
+  td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
+  tbody tr:last-child td{border-bottom:0}
+  .win{color:var(--ok); font-weight:650}
+
+  /* ---------- callouts ---------- */
+  .note{
+    border-left:3px solid var(--warn); background:var(--warn-bg);
+    border-radius:0 10px 10px 0; padding:13px 16px; margin:0 0 16px; font-size:.92rem;
+  }
+  .note.ok{border-left-color:var(--ok); background:var(--ok-bg)}
+  .note strong.nt{display:block; margin-bottom:3px; font-size:.95rem}
+
+  /* ---------- diagram ---------- */
+  figure{margin:0 0 18px}
+  figure svg{width:100%; height:auto; display:block}
+  figcaption{color:var(--muted); font-size:.82rem; margin-top:9px; text-align:center}
+
+  /* ---------- flow list ---------- */
+  ol.steps{counter-reset:s; list-style:none; padding:0; margin:0 0 16px}
+  ol.steps > li{
+    counter-increment:s; position:relative; padding-left:40px; margin:0 0 14px;
+  }
+  ol.steps > li::before{
+    content:counter(s); position:absolute; left:0; top:1px;
+    width:26px; height:26px; border-radius:50%; background:var(--accent);
+    color:#fff; font-size:.8rem; font-weight:650;
+    display:flex; align-items:center; justify-content:center;
+  }
+  ol.steps > li > strong{display:block}
+
+  /* ---------- footer ---------- */
+  footer{
+    border-top:1px solid var(--line); padding:26px 0 44px;
+    color:var(--muted); font-size:.86rem;
+  }
+  .kbd-hint{color:var(--muted); font-size:.84rem}
+  @media (max-width:600px){
+    .hero h1{font-size:1.55rem}
+    .bar{height:auto; flex-wrap:wrap; padding:10px 0}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap bar">
+    <div class="brand">nanojev-mlx <span class="zh">· 新手入门</span><span class="en">· Beginner's guide</span></div>
+    <div class="spacer"></div>
+    <div class="toggle" role="group" aria-label="Language">
+      <button id="btn-zh" aria-pressed="true" onclick="setLang('zh')">中文</button>
+      <button id="btn-en" aria-pressed="false" onclick="setLang('en')">English</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap hero">
+  <div class="pill zh">Apple Silicon · MLX · 本地推理</div>
+  <div class="pill en">Apple Silicon · MLX · Local inference</div>
+
+  <h1 class="zh">在 Mac 上跑一个「只做选择、不写作文」的 AI 模型</h1>
+  <h1 class="en">Run an AI model on your Mac that picks answers instead of writing them</h1>
+
+  <p class="lead zh">
+    nanojev-mlx 把 <strong>NanoJev</strong> —— 一个 0.6B 的「并行决策模型」—— 移植到
+    Apple 芯片上原生运行。你给它<strong>一段状态</strong>和<strong>一个问题 + 几个候选选项</strong>，
+    它<strong>一次前向</strong>就返回一个完整的概率分布，全程<strong>不生成任何 token</strong>。
+  </p>
+  <p class="lead en">
+    nanojev-mlx ports <strong>NanoJev</strong> — a 0.6B “parallel decision model” — to run
+    natively on Apple Silicon. Give it <strong>a state</strong> and
+    <strong>a question with a few candidate options</strong>; it returns a complete probability
+    distribution in <strong>a single forward pass</strong>, with <strong>zero token decoding</strong>.
+  </p>
+</div>
+
+<div class="wrap">
+
+<!-- ============ 1 ============ -->
+<section id="idea">
+  <h2><span class="num">1</span>
+    <span class="zh">一句话理解它和 ChatGPT 的区别</span>
+    <span class="en">The one-sentence difference from ChatGPT</span>
+  </h2>
+
+  <div class="zh">
+    <p>
+      普通大模型是<strong>「写答案」</strong>：一个字一个字往外吐，所以可能跑题、可能编造、
+      也无法告诉你「我有多确定」。NanoJev 是<strong>「打分」</strong>：候选选项是<strong>你给的</strong>，
+      它只负责给每个选项算一个概率。
+    </p>
+    <div class="note">
+      <strong class="nt">打个比方</strong>
+      不是让学生写一篇作文，而是把选择题给他，要求他不仅要选，还要为每个选项标注信心百分比。
+      他不可能写出选项之外的答案——因为压根没有这个自由度。
+    </div>
+    <p>这带来三个直接好处：</p>
+    <ul>
+      <li><strong>不会格式错乱</strong>——输出永远被限制在你给的候选集合内。</li>
+      <li><strong>可解释</strong>——拿到的是完整概率分布，不是一句难以验证的断言。</li>
+      <li><strong>快且省</strong>——没有逐 token 解码循环，一次前向算完。</li>
+    </ul>
+    <p>典型用途：工单该分给哪个团队、这句话是真是假、某个指标算几级。</p>
+  </div>
+
+  <div class="en">
+    <p>
+      A normal LLM <strong>writes an answer</strong>: token by token, so it can drift, invent facts,
+      and cannot tell you how confident it is. NanoJev <strong>scores</strong> instead: the
+      candidates are <strong>yours</strong>, and the model only assigns a probability to each one.
+    </p>
+    <div class="note">
+      <strong class="nt">An analogy</strong>
+      It is not an essay question — it is a multiple-choice question where the student must also
+      write down a confidence percentage for every option. It cannot answer outside your candidate
+      list, because that freedom simply does not exist.
+    </div>
+    <p>Three immediate consequences:</p>
+    <ul>
+      <li><strong>No malformed output</strong> — the result is always inside the candidate set you supplied.</li>
+      <li><strong>Inspectable</strong> — you get a full probability distribution, not an unverifiable sentence.</li>
+      <li><strong>Fast and small</strong> — there is no token-by-token decode loop; one forward pass does it all.</li>
+    </ul>
+    <p>Typical uses: routing a ticket to the right team, deciding whether a claim is true, grading a level.</p>
+  </div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section id="pipeline">
+  <h2><span class="num">2</span>
+    <span class="zh">一次推理到底发生了什么</span>
+    <span class="en">What actually happens in one inference</span>
+  </h2>
+
+  <figure>
+    <svg viewBox="0 0 860 330" role="img" aria-label="Inference pipeline">
+      <defs>
+        <marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+          <path d="M0,0 L7,3 L0,6 z" fill="currentColor" opacity=".45"/>
+        </marker>
+      </defs>
+      <g font-family="ui-monospace,Menlo,monospace" font-size="12.5" fill="currentColor">
+        <!-- input -->
+        <rect x="8" y="16" width="150" height="56" rx="9" fill="none" stroke="currentColor" stroke-opacity=".3"/>
+        <text x="83" y="40" text-anchor="middle">State + Question</text>
+        <text x="83" y="58" text-anchor="middle" opacity=".6">+ 2–10 candidates</text>
+
+        <line x1="162" y1="44" x2="196" y2="44" stroke="currentColor" stroke-opacity=".45" marker-end="url(#ar)"/>
+
+        <!-- paths -->
+        <rect x="200" y="16" width="164" height="56" rx="9" fill="none" stroke="currentColor" stroke-opacity=".3"/>
+        <text x="282" y="40" text-anchor="middle">N candidate paths</text>
+        <text x="282" y="58" text-anchor="middle" opacity=".6">…"Decision:" + EOS</text>
+
+        <line x1="368" y1="44" x2="402" y2="44" stroke="currentColor" stroke-opacity=".45" marker-end="url(#ar)"/>
+
+        <!-- backbone -->
+        <rect x="406" y="8" width="212" height="72" rx="9" fill="none" stroke="currentColor" stroke-opacity=".55" stroke-width="1.6"/>
+        <text x="512" y="34" text-anchor="middle" font-weight="600">Qwen3-0.6B backbone</text>
+        <text x="512" y="52" text-anchor="middle" opacity=".6">28 layers · one pass</text>
+        <text x="512" y="69" text-anchor="middle" opacity=".6">right-padded matrix</text>
+
+        <line x1="622" y1="44" x2="656" y2="44" stroke="currentColor" stroke-opacity=".45" marker-end="url(#ar)"/>
+
+        <!-- head -->
+        <rect x="660" y="8" width="192" height="72" rx="9" fill="none" stroke="currentColor" stroke-opacity=".55" stroke-width="1.6"/>
+        <text x="756" y="34" text-anchor="middle" font-weight="600">Decision head</text>
+        <text x="756" y="52" text-anchor="middle" opacity=".6">200,578 params</text>
+        <text x="756" y="69" text-anchor="middle" opacity=".6">set-attention</text>
+
+        <!-- down to last hidden -->
+        <line x1="512" y1="84" x2="512" y2="126" stroke="currentColor" stroke-opacity=".45" marker-end="url(#ar)"/>
+        <rect x="380" y="130" width="264" height="52" rx="9" fill="none" stroke="currentColor" stroke-opacity=".3" stroke-dasharray="4 3"/>
+        <text x="512" y="152" text-anchor="middle">take last real token per path</text>
+        <text x="512" y="170" text-anchor="middle" opacity=".6">hidden state [paths, 1024]</text>
+
+        <line x1="512" y1="186" x2="512" y2="222" stroke="currentColor" stroke-opacity=".45" marker-end="url(#ar)"/>
+
+        <!-- output -->
+        <rect x="352" y="226" width="320" height="80" rx="9" fill="none" stroke="currentColor" stroke-opacity=".3"/>
+        <text x="512" y="250" text-anchor="middle" font-weight="600">softmax over candidates</text>
+        <text x="512" y="272" text-anchor="middle" opacity=".75">billing 0.999997 · technical 0.000003</text>
+        <text x="512" y="291" text-anchor="middle" opacity=".55">sums to 1.0 — no decoding steps</text>
+      </g>
+    </svg>
+    <figcaption class="zh">所有候选路径右填充成一个矩阵，<strong>一次</strong> backbone 前向全部算完。</figcaption>
+    <figcaption class="en">All candidate paths are right-padded into one matrix and finished in <strong>a single</strong> backbone pass.</figcaption>
+  </figure>
+
+  <div class="zh">
+    <ol class="steps">
+      <li><strong>拼路径</strong>把「状态 + 问题 + 每个候选」拼成 N 条独立的 token 序列，末尾统一加上 <code>Decision:</code> 与 EOS。</li>
+      <li><strong>一次前向</strong>N 条路径右填充成一个矩阵，喂给 28 层的 Qwen3-0.6B backbone，只跑一遍。</li>
+      <li><strong>取向量</strong>每条路径取<strong>最后一个真实 token</strong> 位置的 hidden state（1024 维）。</li>
+      <li><strong>决策头打分</strong>一个 20 万参数的小网络给每条候选算出一个 logit；choice 题型还会让候选之间互相「看一眼」（集合内自注意力）。</li>
+      <li><strong>softmax</strong>把 logit 变成概率分布，直接作为答案返回。</li>
+    </ol>
+    <div class="note ok">
+      <strong class="nt">为什么不写自定义注意力算子？</strong>
+      因为 padding 永远在真实 token 的<strong>右侧</strong>，纯因果掩码下真实位置根本注意不到它。
+      所以「右填充 + 因果掩码」与 HF 的「因果 + padding 双重掩码」在数值上完全等价——
+      这省掉了一整个自定义 kernel。
+    </div>
+  </div>
+
+  <div class="en">
+    <ol class="steps">
+      <li><strong>Build paths</strong> — stitch “state + question + each candidate” into N separate token sequences, each ending with <code>Decision:</code> and EOS.</li>
+      <li><strong>One forward pass</strong> — right-pad the N paths into a single matrix and run the 28-layer Qwen3-0.6B backbone exactly once.</li>
+      <li><strong>Take the vectors</strong> — read the hidden state (1024-dim) at the <strong>last real token</strong> of each path.</li>
+      <li><strong>Head scores</strong> — a 200K-parameter head turns each candidate into a logit; for <em>choice</em> questions the candidates also attend to each other (a small set-attention).</li>
+      <li><strong>Softmax</strong> — logits become a probability distribution, returned as the answer.</li>
+    </ol>
+    <div class="note ok">
+      <strong class="nt">Why no custom attention kernel?</strong>
+      Padding always sits to the <strong>right</strong> of real tokens, so under a plain causal mask no real
+      position can attend to it. “Right-padding + causal mask” is therefore numerically identical to
+      HF's “causal + padding mask” — which removes an entire custom kernel from the port.
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section id="anatomy">
+  <h2><span class="num">3</span>
+    <span class="zh">这个模型有多大：99.97% 是现成的 backbone</span>
+    <span class="en">How big it is: 99.97% is an off-the-shelf backbone</span>
+  </h2>
+
+  <div class="zh">
+    <p>
+      NanoJev <strong>不是</strong>从零训练的模型。它的绝大部分就是公开的
+      <strong>Qwen3-0.6B</strong>，真正的「新东西」只有末端一个极小的决策头：
+    </p>
+  </div>
+  <div class="en">
+    <p>
+      NanoJev is <strong>not</strong> trained from scratch. The vast majority of it is the public
+      <strong>Qwen3-0.6B</strong>; the only genuinely new part is a tiny decision head on the end:
+    </p>
+  </div>
+
+  <figure>
+    <svg viewBox="0 0 860 76" role="img" aria-label="Parameter split">
+      <g font-family="ui-monospace,Menlo,monospace" font-size="12.5">
+        <rect x="0" y="18" width="838" height="30" rx="7" fill="currentColor" opacity=".13"/>
+        <rect x="838" y="18" width="22" height="30" rx="7" fill="#0a6cff" opacity=".85"/>
+        <text x="419" y="38" text-anchor="middle" fill="currentColor" font-weight="600">
+          Qwen3-0.6B backbone — 596,049,920 params (99.97%)
+        </text>
+        <text x="0" y="66" fill="currentColor" opacity=".6">28 layers · hidden 1024 · 16 heads</text>
+        <text x="860" y="66" text-anchor="end" fill="currentColor" opacity=".6">head 200,578 (0.034%) ←</text>
+      </g>
+    </svg>
+    <figcaption class="zh">总参数 596,250,498，与原版 checkpoint 记录的 parameter_count 完全一致。</figcaption>
+    <figcaption class="en">Total 596,250,498 params — exactly the <code>parameter_count</code> recorded in the original checkpoint config.</figcaption>
+  </figure>
+
+  <div class="zh">
+    <p>
+      决策头本身就四步，全是小矩阵乘法：<code>LayerNorm</code> → 每候选一个标量 logit →
+      候选集合内做一次 4 头自注意力 → 输出一个 tanh 残差修正量。
+      <strong>因为要改的只有这个小头，移植才可能做得又快又准。</strong>
+    </p>
+  </div>
+  <div class="en">
+    <p>
+      The head itself is four small steps: <code>LayerNorm</code> → one scalar logit per candidate →
+      a single 4-head self-attention across the candidate set → a tanh residual correction.
+      <strong>Because only this small head had to be rewritten, the port could be both fast and exact.</strong>
+    </p>
+  </div>
+</section>
+
+<!-- ============ 4 ============ -->
+<section id="types">
+  <h2><span class="num">4</span>
+    <span class="zh">三种题型，共用同一次前向</span>
+    <span class="en">Three question types, one shared forward pass</span>
+  </h2>
+
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th class="zh">你给什么</th><th class="en">What you provide</th>
+          <th class="zh">你拿回什么</th><th class="en">What you get back</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>boolean</code></td>
+          <td class="zh">一句待判定的命题</td><td class="en">A proposition to judge</td>
+          <td class="zh"><code>p_true</code> 与 <code>value</code></td><td class="en"><code>p_true</code> and <code>value</code></td>
+        </tr>
+        <tr>
+          <td><code>choice</code></td>
+          <td class="zh">2–255 个候选（id → 描述）</td><td class="en">2–255 candidates (id → description)</td>
+          <td class="zh">每个候选的概率 + 最高者</td><td class="en">A probability per candidate + the argmax</td>
+        </tr>
+        <tr>
+          <td><code>score</code></td>
+          <td class="zh">2–10 个<strong>有序</strong>等级描述</td><td class="en">2–10 <strong>ordered</strong> level descriptions</td>
+          <td class="zh"><code>score</code>（期望值）与 <code>level</code></td><td class="en"><code>score</code> (expectation) and <code>level</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="zh">
+    <p>
+      <code>boolean</code> 的实现很巧妙：只有一条语义路径，logits 被构造成 <code>[0, z]</code>，
+      于是 <code>p_true = sigmoid(z)</code>。<code>score</code> 则对有序等级做 softmax 后取期望值——
+      所以 <strong>「严重度 2.35 级」这种连续值也能表达</strong>，而不是硬塞进某一档。
+    </p>
+  </div>
+  <div class="en">
+    <p>
+      <code>boolean</code> is neat: there is one semantic path and the logits are built as
+      <code>[0, z]</code>, so <code>p_true = sigmoid(z)</code>. <code>score</code> takes the
+      expectation over a softmax of ordered levels — so <strong>a continuous value like
+      “severity 2.35” is representable</strong> instead of being forced into one bucket.
+    </p>
+  </div>
+</section>
+
+<!-- ============ 5 ============ -->
+<section id="port">
+  <h2><span class="num">5</span>
+    <span class="zh">这个移植到底改了什么（以及没改什么）</span>
+    <span class="en">What the port changed — and what it deliberately did not</span>
+  </h2>
+
+  <div class="note">
+    <strong class="nt zh">先说清楚一件事</strong>
+    <strong class="nt en">One thing to get straight first</strong>
+    <span class="zh">
+      原版 NanoJev <strong>并不是只能跑 CUDA</strong>。它的文档与训练环境以 CUDA 为先（A100、bf16），
+      研究脚本大多限定 CUDA，但它的推理脚本本身支持 <code>auto / cpu / mps / cuda</code>，
+      在 Apple 芯片上通过 PyTorch MPS 是能跑的——本项目基准里的「PyTorch + MPS」就是它。
+      真正的差别在于：那条路必须装 PyTorch，而且内存和启动开销大得多。
+    </span>
+    <span class="en">
+      The original NanoJev is <strong>not CUDA-only</strong>. It is CUDA-first — its docs and training
+      environment target an A100 in bf16, and most research scripts are CUDA-gated — but its inference
+      script accepts <code>auto / cpu / mps / cuda</code> and does run on Apple Silicon via PyTorch MPS.
+      That is precisely the “PyTorch + MPS” baseline in this project. The real difference is that this
+      path forces PyTorch on you and costs far more memory and startup time.
+    </span>
+  </div>
+
+  <div class="zh">
+    <p><strong>模型本身一个字节都没动</strong>：权重、分词器、提示构造、概率语义全部照旧。</p>
+  </div>
+  <div class="en">
+    <p><strong>Not a single byte of the model changed</strong>: weights, tokenizer, prompt construction, and probability semantics are all untouched.</p>
+  </div>
+
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th class="zh">组件</th><th class="en">Component</th>
+          <th class="zh">原版</th><th class="en">Original</th>
+          <th class="zh">本移植</th><th class="en">Here</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>backbone</td>
+          <td>HF <code>Qwen3Model</code> (PyTorch)</td>
+          <td><code>mlx_lm</code> <code>Qwen3Model</code></td>
+        </tr>
+        <tr>
+          <td class="zh">决策头</td><td class="en">Decision head</td>
+          <td><code>nn.MultiheadAttention</code></td>
+          <td class="zh">MLX 显式注意力 + 加性掩码</td><td class="en">Explicit MLX attention + additive mask</td>
+        </tr>
+        <tr>
+          <td class="zh">融合投影</td><td class="en">Fused projection</td>
+          <td class="zh">保持融合的 <code>in_proj_weight</code></td><td class="en">Kept fused <code>in_proj_weight</code></td>
+          <td class="zh">加载时切成 <code>q/k/v_proj</code></td><td class="en">Split into <code>q/k/v_proj</code> at load</td>
+        </tr>
+        <tr>
+          <td class="zh">权重格式</td><td class="en">Weight format</td>
+          <td class="zh">PyTorch safetensors</td><td class="en">PyTorch safetensors</td>
+          <td class="zh"><strong>直接读同一个文件</strong>，无转换步骤</td><td class="en"><strong>Reads the same file</strong>, no conversion step</td>
+        </tr>
+        <tr>
+          <td class="zh">设备</td><td class="en">Device</td>
+          <td class="zh">CUDA 优先，可退 MPS</td><td class="en">CUDA-first, MPS fallback</td>
+          <td class="zh">Metal GPU（MLX），不需 PyTorch</td><td class="en">Metal GPU via MLX, no PyTorch</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note ok">
+    <strong class="nt zh">最需要小心的一块</strong>
+    <strong class="nt en">The part that needed the most care</strong>
+    <span class="zh">
+      <code>prepare_examples</code>——把状态、问题、候选集变成 token 路径的那段代码——是<strong>逐行</strong>移植的。
+      因为只要差一个 token，下游所有概率都会变，数值对齐验证也就失去意义。
+    </span>
+    <span class="en">
+      <code>prepare_examples</code> — the code that turns a state, question, and candidate set into token
+      paths — was ported <strong>line by line</strong>. A single differing token would change every
+      probability downstream and void the equivalence check.
+    </span>
+  </div>
+</section>
+
+<!-- ============ 6 ============ -->
+<section id="numbers">
+  <h2><span class="num">6</span>
+    <span class="zh">实测数字（以及它们是怎么测的）</span>
+    <span class="en">The measured numbers (and how they were taken)</span>
+  </h2>
+
+  <div class="zh">
+    <p>
+      测试机：Apple M4 / 16 GB 统一内存 / macOS 26.5.1 / Python 3.14.6 / MLX 0.32.2。
+      负载是仓库自带的参考用例：2 个状态、6 个问题、15 条候选路径、1 次 backbone 前向。
+      两边都是 fp32。
+    </p>
+  </div>
+  <div class="en">
+    <p>
+      Test machine: Apple M4 / 16 GB unified memory / macOS 26.5.1 / Python 3.14.6 / MLX 0.32.2.
+      The workload is the repository's own reference fixture: 2 states, 6 questions, 15 candidate
+      paths, 1 backbone forward. Both sides run fp32.
+    </p>
+  </div>
+
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th class="zh">指标</th><th class="en">Metric</th>
+          <th class="num">PyTorch + MPS</th>
+          <th class="num">nanojev-mlx</th>
+          <th class="num zh">变化</th><th class="num en">Change</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="zh">稳态单次推理</td><td class="en">Steady-state latency</td>
+          <td class="num">456 ms</td><td class="num win">344 ms</td><td class="num win">1.3×</td>
+        </tr>
+        <tr>
+          <td class="zh">冷启动到首次出结果</td><td class="en">Cold start to first result</td>
+          <td class="num">8.2 s</td><td class="num win">2.2 s</td><td class="num win">3.8×</td>
+        </tr>
+        <tr>
+          <td class="zh">峰值内存 (RSS)</td><td class="en">Peak resident memory</td>
+          <td class="num">4.91 GiB</td><td class="num win">2.75 GiB</td><td class="num win">−44%</td>
+        </tr>
+        <tr>
+          <td class="zh">运行时依赖体积</td><td class="en">Runtime dependency footprint</td>
+          <td class="num">590 MB</td><td class="num win">210 MB</td><td class="num win">2.8×</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="zh">
+    <p class="kbd-hint">
+      延迟 = 6 轮预热后的<strong>中位数</strong>；内存 = 峰值 RSS；冷启动 = 运行时导入 + 加载模型 + 首次出结果
+      （即跑 CLI 时用户真正要等的时间）；依赖 = Apple 芯片上 <code>site-packages</code> 的安装体积
+      （<code>torch</code> 对比 <code>mlx</code> + <code>mlx-lm</code>；两边都要装的
+      <code>transformers</code>、<code>numpy</code>、<code>safetensors</code> 相互抵消）。
+    </p>
+    <p class="kbd-hint">
+      这些数字可以用仓库自带的脚本一键复现：
+      <code>python benchmarks/benchmark.py --checkpoint-dir checkpoints/NanoJev --backend both --nanojev-repo ../NanoJev</code>
+      （<code>--backend both</code> 会把两个后端放进各自的子进程测量，避免内存读数互相污染。）
+    </p>
+    <div class="note">
+      <strong class="nt">关于 1.3× 这个数字，说实话</strong>
+      它真实但不算惊艳，原因是<strong>结构性的</strong>：这个模型<strong>为每一条候选路径完整跑一遍 28 层 backbone</strong>。
+      所以算力瓶颈在 backbone，而不是本移植重写的那 20 万参数决策头。
+      MLX 在内存和启动上的优势（−44%、3.8×）远比延迟优势显著。
+      想让延迟再降一个量级，真正的抓手是<strong>前缀共享</strong>（见下一节），不是把决策头写得更快。
+    </div>
+  </div>
+
+  <div class="en">
+    <p class="kbd-hint">
+      Latency = <strong>median</strong> of 6 warm rounds; memory = peak RSS; cold start = runtime import
+      + model load + first result (what you actually wait for when running the CLI); footprint =
+      installed <code>site-packages</code> size on Apple Silicon (<code>torch</code> versus
+      <code>mlx</code> + <code>mlx-lm</code>; the shared <code>transformers</code>, <code>numpy</code>,
+      and <code>safetensors</code> cancel out).
+    </p>
+    <p class="kbd-hint">
+      Reproduce all of it with the bundled harness:
+      <code>python benchmarks/benchmark.py --checkpoint-dir checkpoints/NanoJev --backend both --nanojev-repo ../NanoJev</code>
+      (<code>--backend both</code> measures each stack in its own subprocess so the memory readings
+      stay clean).
+    </p>
+    <div class="note">
+      <strong class="nt">About that 1.3×, honestly</strong>
+      It is real but modest, and the reason is <strong>structural</strong>: the model runs the
+      <strong>full 28-layer backbone once per candidate path</strong>. The workload is therefore
+      compute-bound on the backbone, not on the 200K-parameter head this port rewrote.
+      MLX's wins on memory (−44%) and startup (3.8×) are far more significant than the latency win.
+      The real lever for a step change in latency is <strong>prefix sharing</strong> (next section),
+      not a faster head.
+    </div>
+  </div>
+
+  <h3><span class="zh">正确性：不是口头保证</span><span class="en">Correctness: verified, not asserted</span></h3>
+
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th class="zh">检查项</th><th class="en">Check</th>
+          <th class="zh">结果</th><th class="en">Result</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="zh">测试套件</td><td class="en">Test suite</td>
+          <td><strong>19 / 19 pass</strong></td>
+        </tr>
+        <tr>
+          <td class="zh">与 PyTorch 最大概率偏差</td><td class="en">Max probability deviation vs PyTorch</td>
+          <td><strong>1.56e-07</strong></td>
+        </tr>
+        <tr>
+          <td class="zh">backbone hidden state 最大绝对误差</td>
+          <td class="en">Backbone hidden-state max abs error</td>
+          <td><strong>1.006e-04</strong> <span class="zh">（数值量级达 67.6）</span><span class="en">(on values up to 67.6)</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="zh">
+    <p>
+      基准答案 <code>tests/reference/expected_pytorch.json</code> 是<strong>原仓库</strong>
+      <code>scripts/predict_toy_decisions.py</code> 在 CPU 上以 float32 跑出来的，
+      不是本移植自己生成的——这一点很关键，否则就成了自我印证。
+    </p>
+  </div>
+  <div class="en">
+    <p>
+      The golden file <code>tests/reference/expected_pytorch.json</code> was produced by the
+      <strong>original</strong> <code>scripts/predict_toy_decisions.py</code> on CPU in float32 —
+      not generated by this port. That distinction matters; otherwise the check would just be
+      marking its own homework.
+    </p>
+  </div>
+</section>
+
+<!-- ============ 7 ============ -->
+<section id="start">
+  <h2><span class="num">7</span>
+    <span class="zh">快速开始（5 分钟）</span>
+    <span class="en">Quick start (5 minutes)</span>
+  </h2>
+
+  <div class="zh">
+    <p>
+      需要 <strong>Apple 芯片 Mac（M1 或更新）</strong>、<strong>macOS 14 (Sonoma) 或更新</strong>、
+      <strong>Python ≥ 3.10</strong>，以及约 <strong>5 GB 磁盘</strong>（权重约 2.4 GB）。
+    </p>
+    <ol class="steps">
+      <li>
+        <strong>装依赖</strong>
+        <pre><code>git clone https://github.com/mrg123/nanojev-mlx.git
+cd nanojev-mlx
+python -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install -r requirements.txt</code></pre>
+      </li>
+      <li>
+        <strong>下权重</strong>（约 2.4 GB，只需一次）
+        <pre><code>python - &lt;&lt;'PY'
+from huggingface_hub import snapshot_download
+snapshot_download(
+    repo_id="C-Tianyu/NanoJev",
+    local_dir="checkpoints/NanoJev",
+    allow_patterns=["best.safetensors", "config.json",
+                    "tokenizer/*", "backbone_config/*"],
+)
+PY</code></pre>
+        <p class="kbd-hint">
+          <strong>没有格式转换步骤。</strong>本移植直接读 <code>best.safetensors</code>，
+          在加载时映射 PyTorch 的权重布局，磁盘上不会多出一份第二格式的副本。
+        </p>
+      </li>
+      <li>
+        <strong>写一个请求</strong> <code>request.json</code>
+        <span class="kbd-hint">（仓库里已经有三种题型齐全的 <code>examples/request.json</code>，
+        想先试跑可以直接用它。）</span>
+        <pre><code>{
+  "states": [{
+    "id": "my_state",
+    "state": "订单尚未退款。",
+    "questions": {
+      "already_refunded": {
+        "type": "boolean",
+        "instructions": "订单是否已经完成退款？"
+      }
+    }
+  }]
+}</code></pre>
+      </li>
+      <li>
+        <strong>跑推理</strong>
+        <pre><code>python -m nanojev_mlx.predict \
+  --checkpoint-dir checkpoints/NanoJev \
+  --input request.json</code></pre>
+        <p class="kbd-hint">真实输出（本页实测，概率已归一）：</p>
+        <pre><code>"already_refunded": {
+  "type": "boolean",
+  "probabilities": { "false": 0.9854100942611694,
+                     "true":  0.014589899219572544 },
+  "p_true": 0.014589899219572544,
+  "value": false
+}</code></pre>
+        <p class="kbd-hint">
+          读法：模型认为「订单已经退款」的概率只有 <strong>1.46%</strong>——
+          与「尚未退款」的中文描述一致。
+        </p>
+      </li>
+    </ol>
+  </div>
+
+  <div class="en">
+    <p>
+      You need an <strong>Apple Silicon Mac (M1 or newer)</strong> running
+      <strong>macOS 14 (Sonoma) or later</strong>, <strong>Python ≥ 3.10</strong>,
+      and about <strong>5 GB of disk</strong> (weights are ~2.4 GB).
+    </p>
+    <ol class="steps">
+      <li>
+        <strong>Install</strong>
+        <pre><code>git clone https://github.com/mrg123/nanojev-mlx.git
+cd nanojev-mlx
+python -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install -r requirements.txt</code></pre>
+      </li>
+      <li>
+        <strong>Download the weights</strong> (~2.4 GB, once)
+        <pre><code>python - &lt;&lt;'PY'
+from huggingface_hub import snapshot_download
+snapshot_download(
+    repo_id="C-Tianyu/NanoJev",
+    local_dir="checkpoints/NanoJev",
+    allow_patterns=["best.safetensors", "config.json",
+                    "tokenizer/*", "backbone_config/*"],
+)
+PY</code></pre>
+        <p class="kbd-hint">
+          <strong>No conversion step.</strong> The port reads <code>best.safetensors</code> directly
+          and maps the PyTorch weight layout at load time, so no second copy in another format ever
+          lands on disk.
+        </p>
+      </li>
+      <li>
+        <strong>Write a request</strong> as <code>request.json</code>
+        <span class="kbd-hint">(the repo already ships <code>examples/request.json</code> covering all
+        three question types — use it if you just want to try a run.)</span>
+        <pre><code>{
+  "states": [{
+    "id": "my_state",
+    "state": "订单尚未退款。",
+    "questions": {
+      "already_refunded": {
+        "type": "boolean",
+        "instructions": "订单是否已经完成退款？"
+      }
+    }
+  }]
+}</code></pre>
+      </li>
+      <li>
+        <strong>Run it</strong>
+        <pre><code>python -m nanojev_mlx.predict \
+  --checkpoint-dir checkpoints/NanoJev \
+  --input request.json</code></pre>
+        <p class="kbd-hint">Real output (measured for this page; probabilities sum to 1):</p>
+        <pre><code>"already_refunded": {
+  "type": "boolean",
+  "probabilities": { "false": 0.9854100942611694,
+                     "true":  0.014589899219572544 },
+  "p_true": 0.014589899219572544,
+  "value": false
+}</code></pre>
+        <p class="kbd-hint">
+          Reading it: the model puts only <strong>1.46%</strong> on “the order was already refunded”,
+          matching the state text that says it was not.
+        </p>
+      </li>
+    </ol>
+  </div>
+
+  <h3><span class="zh">作为本地 HTTP 服务跑</span><span class="en">Run it as a local HTTP service</span></h3>
+  <p class="zh">与原版 <code>POST /api/evaluate</code> 协议兼容：</p>
+  <p class="en">Protocol-compatible with the original <code>POST /api/evaluate</code>:</p>
+  <pre><code>python -m nanojev_mlx.serve --checkpoint-dir checkpoints/NanoJev --port 8765
+
+curl -X POST http://127.0.0.1:8765/api/evaluate \
+  -H 'Content-Type: application/json' \
+  --data-binary @request.json</code></pre>
+
+  <h3><span class="zh">在 Python 里调用</span><span class="en">From Python</span></h3>
+  <pre><code>from nanojev_mlx import load_model, run_prediction
+
+model = load_model("checkpoints/NanoJev")
+result = run_prediction(model, payload)
+print(result["states"][0]["answers"])</code></pre>
+
+  <h3><span class="zh">跑测试</span><span class="en">Run the tests</span></h3>
+  <pre><code>NANOJEV_CHECKPOINT=/path/to/checkpoints/NanoJev \
+  python -m unittest discover -s tests -v</code></pre>
+  <p class="kbd-hint zh">
+    不设 <code>NANOJEV_CHECKPOINT</code> 也能跑：需要权重的等价性测试会自动跳过，
+    剩下 15 项协议层测试无需权重即可通过。
+  </p>
+  <p class="kbd-hint en">
+    It also runs without <code>NANOJEV_CHECKPOINT</code>: the weight-dependent equivalence tests
+    skip themselves and the remaining 15 protocol-level tests pass with no weights at all.
+  </p>
+</section>
+
+<!-- ============ 8 ============ -->
+<section id="layout">
+  <h2><span class="num">8</span>
+    <span class="zh">项目结构：每个文件干什么</span>
+    <span class="en">Project layout: what each file does</span>
+  </h2>
+
+  <pre><code>nanojev_mlx/
+  answers.py  把概率分布组装成判定结果（纯 Python，不导入 MLX → CI 可跑）
+  head.py     决策头：LayerNorm → scalar → 集合自注意力 → 输出
+  model.py    权重映射（拆 in_proj_weight）+ backbone 装载 + 一次前向
+  text.py     请求校验 + prepare_examples（逐行移植的关键部分）
+  predict.py  批量推理与结果组装、CLI 入口
+  serve.py    本地 HTTP 服务（/api/evaluate、/api/health）
+tests/
+  test_contract.py     协议层：校验、概率归一、异常输入（15 项，无需权重/无需 MLX）
+  test_equivalence.py  数值等价：与 PyTorch 基准逐概率比对（4 项，需权重）
+  reference/           参考请求 + PyTorch 参考输出（金标准）
+benchmarks/
+  benchmark.py  复现 README 性能表的测量脚本
+examples/
+  request.json  三种题型齐全、可直接运行的示例请求
+.github/workflows/ci.yml   Linux 上跑协议层测试（Python 3.10 / 3.13）
+guide.html                 本页
+README.md / README.zh-CN.md  完整文档</code></pre>
+
+  <div class="zh">
+    <p>
+      想读代码，建议顺序：<code>text.py</code>（先看懂一条候选路径长什么样）→
+      <code>head.py</code>（打分逻辑，最短最清晰）→ <code>model.py</code>（怎么把权重搬过来）→
+      <code>predict.py</code> + <code>answers.py</code>（怎么组装成结果）。
+    </p>
+    <p class="kbd-hint">
+      为什么 <code>answers.py</code> 要单独拆出来？因为 MLX 在无头、无 GPU 的环境里
+      <strong>导入即崩溃</strong>，把它隔离出去后，协议层才能在普通 CI 容器里跑起来。
+    </p>
+  </div>
+  <div class="en">
+    <p>
+      Suggested reading order: <code>text.py</code> (see what a candidate path looks like) →
+      <code>head.py</code> (the scoring logic — shortest and clearest) → <code>model.py</code>
+      (how weights are moved over) → <code>predict.py</code> + <code>answers.py</code>
+      (how results are assembled).
+    </p>
+    <p class="kbd-hint">
+      Why is <code>answers.py</code> its own module? Because MLX <strong>crashes on import</strong> in
+      headless, GPU-less environments; isolating it is what lets the protocol layer run on an ordinary
+      CI container.
+    </p>
+  </div>
+</section>
+
+<!-- ============ 9 ============ -->
+<section id="limits">
+  <h2><span class="num">9</span>
+    <span class="zh">它<em>不是</em>什么：诚实的能力边界</span>
+    <span class="en">What it is <em>not</em>: honest boundaries</span>
+  </h2>
+
+  <div class="zh">
+    <ul>
+      <li>
+        <strong>不是通用聊天模型。</strong>它只回答你给的选择题。想聊天请用别的模型——
+        这不是缺陷，是设计。
+      </li>
+      <li>
+        <strong>只做推理，不含训练。</strong>原仓库的训练、评测、benchmark 流水线都没有移植。
+        本仓库负责把模型跑起来，不负责复现论文的训练数字。
+      </li>
+      <li>
+        <strong>不含模型权重。</strong>权重约 2.4 GB，需自行从 Hugging Face 下载（见上一节）。
+      </li>
+      <li>
+        <strong>无前缀共享。</strong>每条候选路径都从头跑一遍完整的 28 层 backbone，与原版一致。
+        同一问题下的候选其实共享很长一段前缀，<strong>缓存它是最大的优化空间</strong>，
+        但本移植为保证与参考实现逐步对齐，有意没有引入这个改动。
+      </li>
+      <li>
+        <strong>仅 fp32，尚未量化。</strong>上游是在 A100 上用 bf16 训练的，本移植跑 fp32——
+        这是一条<strong>不同</strong>的数值路径，更接近用于等价性验证的 CPU fp32 基准，
+        而不是论文公布的指标。MLX 支持 4bit/8bit 量化（内存可再降约 4 倍），
+        但它会改变数值，需要单独一轮验证才能采信。
+      </li>
+      <li>
+        <strong>未挂载官方前端。</strong>本仓库只提供推理与 HTTP 接口，
+        不含上游 <code>web/</code> 里的演示站点。
+      </li>
+    </ul>
+  </div>
+
+  <div class="en">
+    <ul>
+      <li>
+        <strong>Not a general chat model.</strong> It only answers the multiple-choice questions you
+        hand it. Use another model to chat — that is a design choice, not a defect.
+      </li>
+      <li>
+        <strong>Inference only.</strong> The original repository's training, evaluation, and benchmark
+        pipelines are not ported. This repo runs the model; it does not reproduce the paper's training
+        numbers.
+      </li>
+      <li>
+        <strong>No weights included.</strong> The ~2.4 GB checkpoint is downloaded from Hugging Face
+        yourself (previous section).
+      </li>
+      <li>
+        <strong>No prefix sharing.</strong> Every candidate path runs the full 28-layer backbone from
+        scratch, exactly like the original. Candidates within a question share a long prefix, so
+        <strong>caching it is the biggest available optimization</strong> — but this port deliberately
+        left it out to stay step-for-step aligned with the reference implementation.
+      </li>
+      <li>
+        <strong>fp32 only, no quantization yet.</strong> Upstream trained in bf16 on an A100; this port
+        runs fp32, which is a <strong>different</strong> numerical path — closer to the CPU fp32
+        reference used for the equivalence tests than to the published figures. MLX supports 4-bit and
+        8-bit quantization (~4× less memory), but that changes the numbers and needs its own
+        validation pass before it can be trusted.
+      </li>
+      <li>
+        <strong>No bundled front-end.</strong> This repo ships inference and an HTTP interface only;
+        it does not include the demo site from upstream's <code>web/</code>.
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 10 ============ -->
+<section id="glossary">
+  <h2><span class="num">10</span>
+    <span class="zh">术语表</span>
+    <span class="en">Glossary</span>
+  </h2>
+
+  <div class="scroll">
+    <table>
+      <tbody>
+        <tr>
+          <td><strong>MLX</strong></td>
+          <td class="zh">Apple 官方的数组/深度学习框架，专为 Apple 芯片的统一内存设计。本项目的运行时。</td>
+          <td class="en">Apple's array/deep-learning framework built for unified memory on Apple silicon. This project's runtime.</td>
+        </tr>
+        <tr>
+          <td><strong>Metal</strong></td>
+          <td class="zh">Apple 的 GPU 接口。MLX 通过它把计算放到 Mac 的 GPU 上。</td>
+          <td class="en">Apple's GPU API. MLX uses it to run compute on the Mac's GPU.</td>
+        </tr>
+        <tr>
+          <td><strong>backbone</strong></td>
+          <td class="zh">主干网络。这里是 Qwen3-0.6B，负责把文本变成向量，占 99.97% 的参数。</td>
+          <td class="en">The main network — here Qwen3-0.6B, which turns text into vectors and holds 99.97% of the parameters.</td>
+        </tr>
+        <tr>
+          <td><strong>decision head</strong></td>
+          <td class="zh">决策头。接在 backbone 后面的小网络，把向量变成每个候选的分数。</td>
+          <td class="en">The small network on top of the backbone that turns vectors into a score per candidate.</td>
+        </tr>
+        <tr>
+          <td><strong>logit</strong></td>
+          <td class="zh">softmax 之前的原始分数，可正可负、不要求和为 1。</td>
+          <td class="en">The raw score before softmax — can be any real number and need not sum to 1.</td>
+        </tr>
+        <tr>
+          <td><strong>softmax</strong></td>
+          <td class="zh">把一组 logit 变成概率分布（全部 ≥ 0 且和为 1）的运算。</td>
+          <td class="en">Turns a set of logits into a probability distribution (all ≥ 0, summing to 1).</td>
+        </tr>
+        <tr>
+          <td><strong>自回归解码</strong></td>
+          <td class="zh">普通 LLM 逐 token 生成答案的过程。本项目<strong>完全不涉及</strong>（0 步）。</td>
+          <td class="en">The token-by-token generation loop of a normal LLM. This project does <strong>none</strong> of it (0 steps).</td>
+        </tr>
+        <tr>
+          <td><strong>hidden state</strong></td>
+          <td class="zh">backbone 每一层输出的向量。这里取每条路径最后一个真实 token 的 1024 维向量。</td>
+          <td class="en">A vector output by a backbone layer. Here: the 1024-dim vector at each path's last real token.</td>
+        </tr>
+        <tr>
+          <td><strong>因果掩码</strong></td>
+          <td class="zh">让每个位置只能看到自己及左侧内容的掩码，保证不会「偷看」未来 token。</td>
+          <td class="en">A mask letting each position see only itself and what precedes it, so it cannot peek at future tokens.</td>
+        </tr>
+        <tr>
+          <td><strong>前缀共享</strong></td>
+          <td class="zh">同一问题下的候选共享一段相同前缀，缓存其计算结果即可省掉重复计算。<strong>本项目尚未实现。</strong></td>
+          <td class="en">Caching the common prefix shared by a question's candidates to skip recomputation. <strong>Not implemented here.</strong></td>
+        </tr>
+        <tr>
+          <td><strong>量化</strong></td>
+          <td class="zh">用 4bit/8bit 等更低精度存权重以省内存，代价是数值会变。<strong>本项目尚未启用。</strong></td>
+          <td class="en">Storing weights at lower precision (4/8-bit) to save memory, at the cost of changing the numbers. <strong>Not enabled here.</strong></td>
+        </tr>
+        <tr>
+          <td><strong>fp32 / bf16</strong></td>
+          <td class="zh">两种浮点精度。fp32 更精确更占内存，bf16 更快更省。本项目用 fp32。</td>
+          <td class="en">Two floating-point precisions. fp32 is more exact and heavier; bf16 is faster and lighter. This port uses fp32.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+</div><!-- /wrap -->
+
+<footer>
+  <div class="wrap">
+    <p class="zh" style="margin-bottom:6px">
+      <strong>正确性数字</strong>（19 项测试全通过、最大概率偏差 1.56e-07、hidden state 误差 1.006e-04）
+      已在 Apple M4 / 16 GB 上实测复核；<strong>性能数字</strong>取自仓库自带的
+      <code>benchmarks/benchmark.py</code>，可用上文命令一键复现。
+      完整说明见 <a href="README.zh-CN.md">README.zh-CN.md</a> 与
+      <a href="examples/request.json">examples/request.json</a>。
+    </p>
+    <p class="en" style="margin-bottom:6px">
+      <strong>Correctness numbers</strong> (19/19 tests passing, max probability deviation 1.56e-07,
+      hidden-state error 1.006e-04) were re-measured on an Apple M4 / 16 GB. <strong>Performance
+      numbers</strong> come from the repo's <code>benchmarks/benchmark.py</code> and reproduce with the
+      command above. Full details in <a href="README.md">README.md</a> and
+      <a href="examples/request.json">examples/request.json</a>.
+    </p>
+    <p class="zh">
+      MIT 许可 · 非官方社区移植，与 NanoJev 及 TypeSafe 作者无关 ·
+      原始模型：<a href="https://github.com/TianyuCodings/NanoJev">TianyuCodings/NanoJev</a> ·
+      backbone：<a href="https://huggingface.co/Qwen/Qwen3-0.6B">Qwen3-0.6B</a>
+    </p>
+    <p class="en">
+      MIT licensed · Unofficial community port, not affiliated with the NanoJev or TypeSafe authors ·
+      Original model: <a href="https://github.com/TianyuCodings/NanoJev">TianyuCodings/NanoJev</a> ·
+      Backbone: <a href="https://huggingface.co/Qwen/Qwen3-0.6B">Qwen3-0.6B</a>
+    </p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var KEY = "nanojev-guide-lang";
+  function setLang(lang) {
+    document.documentElement.setAttribute("data-lang", lang);
+    document.documentElement.setAttribute("lang", lang === "zh" ? "zh-CN" : "en");
+    document.getElementById("btn-zh").setAttribute("aria-pressed", lang === "zh");
+    document.getElementById("btn-en").setAttribute("aria-pressed", lang === "en");
+    try { localStorage.setItem(KEY, lang); } catch (e) {}
+  }
+  window.setLang = setLang;
+  var saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  if (saved !== "zh" && saved !== "en") saved = "zh";
+  setLang(saved);
+})();
+</script>
+
+</body>
+</html>
