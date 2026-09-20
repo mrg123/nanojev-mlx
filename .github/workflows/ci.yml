@@ -6,21 +6,25 @@ on:
   pull_request:
   workflow_dispatch:
 
-# 为什么这里只跑协议层测试，不跑数值等价性测试：
+# 为什么这里只跑「不需要 MLX」的测试，不跑数值等价性测试：
 #
 # 1. MLX 在无头 / 无 GPU 的环境中**导入即崩溃**（NSRangeException），参见
 #    https://github.com/ml-explore/mlx/issues/3148 。GitHub 托管的 macOS runner
 #    正是这种虚拟机，没有 Metal GPU 直通。
 # 2. 等价性测试还需要 2.4 GB 的 checkpoint 权重，不适合放进 CI。
 #
-# 因此 CI 覆盖的是「不需要 MLX、不需要 GPU、不需要权重」的那一层——这得益于
-# nanojev_mlx.answers 与 predict.py 的分离。等价性测试请在本机运行：
+# 因此 CI 覆盖的是「不需要 MLX、不需要 GPU、不需要权重」的那一层，共 41 项：
+#   tests/test_contract.py  协议层：校验、概率归一、异常输入
+#   tests/test_demo.py      贪吃蛇环境、规划器、对局循环（用桩引擎）
+#   tests/test_live.py      实时 HTTP 服务，起真实服务走本地回环请求（同样用桩引擎）
+# 这得益于 nanojev_mlx.answers 与 predict.py 的分离，以及 demo 不导入 MLX。
+# 等价性测试请在本机运行：
 #
 #     NANOJEV_CHECKPOINT=/path/to/checkpoints/NanoJev python -m unittest discover -s tests -v
 
 jobs:
   test:
-    name: 协议层测试 (Python ${{ matrix.python-version }})
+    name: 无需 MLX 的测试 (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
