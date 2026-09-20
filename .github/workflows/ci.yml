@@ -13,7 +13,7 @@ on:
 #    正是这种虚拟机，没有 Metal GPU 直通。
 # 2. 等价性测试还需要 2.4 GB 的 checkpoint 权重，不适合放进 CI。
 #
-# 因此 CI 覆盖的是「不需要 MLX、不需要 GPU、不需要权重」的那一层，共 41 项：
+# 因此 CI 覆盖的是「不需要 MLX、不需要 GPU、不需要权重」的那一层，共 43 项：
 #   tests/test_contract.py  协议层：校验、概率归一、异常输入
 #   tests/test_demo.py      贪吃蛇环境、规划器、对局循环（用桩引擎）
 #   tests/test_live.py      实时 HTTP 服务，起真实服务走本地回环请求（同样用桩引擎）
