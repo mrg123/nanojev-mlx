@@ -26,8 +26,9 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import threading
 import uuid
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -38,6 +39,17 @@ from demo.controller import EpisodeSession, MlxEngine  # noqa: E402
 MAX_REQUEST_BYTES = 100_000
 MAX_SESSIONS = 8
 
+# A browser holds connections open (keep-alive) and abandons them without warning on
+# reload, navigation or tab close. Two consequences, both handled here:
+#
+#   * a single-threaded server blocks forever reading the next request off an abandoned
+#     connection, freezing the whole app -- hence ThreadingHTTPServer;
+#   * an idle keep-alive connection would otherwise hold its thread indefinitely --
+#     hence the socket timeout below.
+#
+# Inference itself is still serialised by a lock: one model, one call at a time.
+IDLE_CONNECTION_TIMEOUT = 20
+
 
 def live_page() -> str:
     """The page. Plain string, not an f-string -- it is mostly CSS and JS braces."""
@@ -45,25 +57,32 @@ def live_page() -> str:
 
 
 class SnakeDemo:
-    """Holds live episodes. One model, many sessions."""
+    """Holds live episodes. One model, many sessions.
+
+    All public methods take a lock. The HTTP server is threaded so that a slow or
+    abandoned connection cannot freeze the app, but MLX is not driven concurrently --
+    requests queue on the lock and each inference still runs alone.
+    """
 
     def __init__(self, engine):
         self.engine = engine
         self.sessions: dict[str, EpisodeSession] = {}
+        self.lock = threading.Lock()
 
     def _evict(self):
         while len(self.sessions) >= MAX_SESSIONS:
             self.sessions.pop(next(iter(self.sessions)))
 
     def new(self, size=12, seed=61005, controller="greedy", max_steps=256) -> dict:
-        self._evict()
-        session = EpisodeSession(
-            self.engine, size=size, seed=seed, controller=controller, max_steps=max_steps
-        )
-        key = uuid.uuid4().hex[:12]
-        self.sessions[key] = session
-        return {"session": key, "size": size, "seed": seed, "controller": controller,
-                "max_steps": max_steps, **session.snapshot()}
+        with self.lock:
+            self._evict()
+            session = EpisodeSession(
+                self.engine, size=size, seed=seed, controller=controller, max_steps=max_steps
+            )
+            key = uuid.uuid4().hex[:12]
+            self.sessions[key] = session
+            return {"session": key, "size": size, "seed": seed, "controller": controller,
+                    "max_steps": max_steps, **session.snapshot()}
 
     def _get(self, key) -> EpisodeSession:
         if not isinstance(key, str) or key not in self.sessions:
@@ -71,17 +90,20 @@ class SnakeDemo:
         return self.sessions[key]
 
     def step(self, key, action=None) -> dict:
-        session = self._get(key)
-        record = session.step(override_action=action)
-        return {"session": key, "step": record, **session.snapshot()}
+        with self.lock:
+            session = self._get(key)
+            record = session.step(override_action=action)
+            return {"session": key, "step": record, **session.snapshot()}
 
     def state(self, key) -> dict:
-        return {"session": key, **self._get(key).snapshot()}
+        with self.lock:
+            return {"session": key, **self._get(key).snapshot()}
 
 
 def handler_class(demo: SnakeDemo):
     class Handler(BaseHTTPRequestHandler):
         protocol_version = "HTTP/1.1"
+        timeout = IDLE_CONNECTION_TIMEOUT
 
         def _send(self, code, body: bytes, mime="application/json; charset=utf-8"):
             self.send_response(code)
@@ -154,7 +176,8 @@ def main():
     model = load_model(checkpoint)
     engine = MlxEngine(model)
 
-    server = HTTPServer((args.host, args.port), handler_class(SnakeDemo(engine)))
+    server = ThreadingHTTPServer((args.host, args.port), handler_class(SnakeDemo(engine)))
+    server.daemon_threads = True
     print(json.dumps({"url": f"http://{args.host}:{args.port}", "ready": True, "runtime": "mlx"}))
     try:
         server.serve_forever()
