@@ -859,7 +859,7 @@
       <tbody>
         <tr>
           <td class="zh">测试套件</td><td class="en">Test suite</td>
-          <td><strong>49 / 49 pass</strong></td>
+          <td><strong>51 / 51 pass</strong></td>
         </tr>
         <tr>
           <td class="zh">与 PyTorch 最大概率偏差</td><td class="en">Max probability deviation vs PyTorch</td>
@@ -1055,11 +1055,11 @@ print(result["states"][0]["answers"])</code></pre>
   python -m unittest discover -s tests -v</code></pre>
   <p class="kbd-hint zh">
     不设 <code>NANOJEV_CHECKPOINT</code> 也能跑：需要权重的等价性测试会自动跳过，
-    剩下 41 项（协议层 15 + 演示 17 + 实时 9）无需权重即可通过。
+    剩下 43 项（协议层 15 + 演示 17 + 实时 11）无需权重即可通过。
   </p>
   <p class="kbd-hint en">
     It also runs without <code>NANOJEV_CHECKPOINT</code>: the weight-dependent equivalence tests
-    skip themselves and the remaining 41 (15 protocol, 17 demo, 9 live) pass with no weights at all.
+    skip themselves and the remaining 43 (15 protocol, 17 demo, 11 live) pass with no weights at all.
   </p>
 </section>
 
@@ -1080,7 +1080,7 @@ print(result["states"][0]["answers"])</code></pre>
 tests/
   test_contract.py     协议层：校验、概率归一、异常输入（15 项，无需权重/无需 MLX）
   test_demo.py         贪吃蛇环境、规划器、对局循环（17 项，用桩引擎，无需权重/无需 MLX）
-  test_live.py         实时 HTTP 服务，走本地回环真实请求（9 项，同上）
+  test_live.py         实时 HTTP 服务，走本地回环真实请求（11 项，同上）
   test_snake_equivalence.py  真实贪吃蛇决策点的一致性（4 项，需贪吃蛇权重）
   test_equivalence.py  数值等价：与 PyTorch 基准逐概率比对（4 项，需权重）
   reference/           参考请求 + PyTorch 参考输出（金标准）
@@ -1093,7 +1093,7 @@ demo/
   controller.py  代码规划器 + 模型 tiebreak，以及适配移植版的 MlxEngine
   play.py        跑一局 → 生成自包含的 HTML 回放页面
   live.py        实时模式：起一个本地服务，浏览器里看着它一步步走，还能自己接管一步
-.github/workflows/ci.yml   Linux 上跑「不需要 MLX」的 41 项测试（Python 3.10 / 3.13）
+.github/workflows/ci.yml   Linux 上跑「不需要 MLX」的 43 项测试（Python 3.10 / 3.13）
 guide.html                 本页
 README.md / README.zh-CN.md  完整文档</code></pre>
 
@@ -1277,7 +1277,7 @@ README.md / README.zh-CN.md  完整文档</code></pre>
 <footer>
   <div class="wrap">
     <p class="zh" style="margin-bottom:6px">
-      <strong>正确性数字</strong>（49 项测试全通过、最大概率偏差 1.56e-07、hidden state 误差 1.006e-04）
+      <strong>正确性数字</strong>（51 项测试全通过、最大概率偏差 1.56e-07、hidden state 误差 1.006e-04）
       已在 Apple M4 / 16 GB 上实测复核；<strong>性能数字</strong>取自仓库自带的
       <code>benchmarks/benchmark.py</code>，可用上文命令一键复现。
       完整说明见 <a href="README.zh-CN.md">README.zh-CN.md</a> 与
